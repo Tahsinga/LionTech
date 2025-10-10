@@ -31,7 +31,7 @@ if not SECRET_KEY:
         raise RuntimeError('Missing SECRET_KEY environment variable')
 
 # ALLOWED_HOSTS
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'liontech.onrender.com').split(',') if h.strip()]
 
 # Application definition
 INSTALLED_APPS = [
