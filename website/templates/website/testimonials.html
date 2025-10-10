@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Testimonials</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --lighter: #ffffff;
+            --text-main: #1e293b;
+            --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --bg-gradient: linear-gradient(135deg, #f9fafb 0%, #f1f5f9 100%);
+            --card-gradient: linear-gradient(to bottom right, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            --glass-blur: blur(16px);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --border-radius: 12px;
+            --border-radius-lg: 16px;
+            --border-radius-xl: 24px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Neon Effects */
+        .neon-text {
+            text-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .neon-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .neon-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0) 70%);
+            transform: rotate(30deg);
+            z-index: 0;
+            transition: var(--transition);
+            opacity: 0;
+        }
+
+        .neon-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Header Styles */
+        .testimonials-header {
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.025em;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Testimonials Carousel */
+        .testimonials-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+        }
+
+        .testimonial-carousel {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .testimonial-slide {
+            background: var(--card-gradient);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: var(--border-radius-xl);
+            padding: 2.5rem;
+            box-shadow: none; /* removed shadow */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 0 1rem;
+            transition: var(--transition);
+            height: auto;
+        }
+
+        .testimonial-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .testimonial-text {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: var(--text-main);
+            margin-bottom: 2rem;
+            position: relative;
+            padding-left: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .testimonial-text::before {
+            content: '"';
+            position: absolute;
+            left: 0;
+            top: -0.5rem;
+            font-size: 3rem;
+            color: var(--primary-light);
+            opacity: 0.2;
+            font-family: serif;
+            line-height: 1;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .author-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary-light);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .author-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .author-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--text-main);
+        }
+
+        .author-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .author-rating {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .rating-star {
+            color: var(--accent);
+            font-size: 1rem;
+        }
+
+        /* Carousel Navigation */
+        .carousel-control-prev, .carousel-control-next {
+            width: 48px;
+            height: 48px;
+            background: var(--card-gradient);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: none; /* removed shadow */
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 1;
+            transition: var(--transition);
+        }
+
+        .carousel-control-prev {
+            left: -24px;
+        }
+
+        .carousel-control-next {
+            right: -24px;
+        }
+
+        .carousel-control-prev:hover, .carousel-control-next:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .carousel-control-prev-icon, .carousel-control-next-icon {
+            background-size: 1.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
+
+        .carousel-indicators {
+            bottom: -2rem;
+        }
+
+        .carousel-indicators button {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--text-tertiary);
+            opacity: 0.5;
+            transition: var(--transition);
+            border: none;
+            margin: 0 0.25rem;
+        }
+
+        .carousel-indicators button.active {
+            background-color: var(--primary);
+            opacity: 1;
+            width: 30px;
+            border-radius: 5px;
+        }
+
+        /* Testimonial Grid */
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+            padding: 0 2rem;
+        }
+
+        .testimonial-card {
+            background: var(--card-gradient);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            box-shadow: none; /* removed shadow */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: var(--transition);
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: none; /* keep no shadow on hover */
+        }
+
+        .testimonial-card .testimonial-text {
+            font-size: 1rem;
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .testimonial-card .testimonial-text::before {
+            font-size: 2.5rem;
+            top: -0.25rem;
+        }
+
+        .testimonial-card .author-avatar {
+            width: 56px;
+            height: 56px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .testimonial-slide {
+                padding: 2rem;
+            }
+            
+            .carousel-control-prev {
+                left: 0;
+            }
+            
+            .carousel-control-next {
+                right: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .testimonial-slide {
+                padding: 1.5rem;
+                margin: 0 0.5rem;
+            }
+            
+            .testimonial-author {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .testimonial-grid {
+                grid-template-columns: 1fr;
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Testimonials Header -->
+    <header class="testimonials-header">
+        <h1 class="section-title neon-text">What Our Clients Say</h1>
+        <p class="section-subtitle">Trusted by professionals and businesses worldwide. Here's what they have to say about their experience with our platform.</p>
+    </header>
+
+    <!-- Testimonials Carousel -->
+    <div class="testimonials-container">
+        <div id="testimonialCarousel" class="carousel slide testimonial-carousel" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <!-- Slide 1 -->
+                <div class="carousel-item active">
+                    <div class="testimonial-slide neon-card">
+                        <div class="testimonial-content">
+                            <p class="testimonial-text">This platform has completely transformed how we manage our operations. The dashboard provides real-time insights that help us make data-driven decisions quickly. The customer support team is exceptional—always responsive and knowledgeable.</p>
+                            <div class="testimonial-author">
+                                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Jamal Williams" class="author-avatar">
+                                <div class="author-info">
+                                    <h4 class="author-name">Jamal Williams</h4>
+                                    <p class="author-title">CEO, TechSolutions Inc.</p>
+                                    <div class="author-rating">
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="carousel-item">
+                    <div class="testimonial-slide neon-card">
+                        <div class="testimonial-content">
+                            <p class="testimonial-text">As a small business owner, I needed a solution that was powerful yet simple to use. This platform exceeded my expectations. The intuitive interface saved me hours of training time, and the analytics helped me identify new revenue opportunities.</p>
+                            <div class="testimonial-author">
+                                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Aisha Johnson" class="author-avatar">
+                                <div class="author-info">
+                                    <h4 class="author-name">Aisha Johnson</h4>
+                                    <p class="author-title">Founder, Bloom Boutique</p>
+                                    <div class="author-rating">
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="carousel-item">
+                    <div class="testimonial-slide neon-card">
+                        <div class="testimonial-content">
+                            <p class="testimonial-text">The automation features have been a game-changer for our marketing team. We've increased campaign efficiency by 40% while reducing manual work. The platform's reliability means we never have to worry about downtime during critical campaigns.</p>
+                            <div class="testimonial-author">
+                                <img src="https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Kwame Ofori" class="author-avatar">
+                                <div class="author-info">
+                                    <h4 class="author-name">Kwame Ofori</h4>
+                                    <p class="author-title">Marketing Director, UrbanGrowth</p>
+                                    <div class="author-rating">
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                        <i class="bi bi-star-fill rating-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carousel Controls -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+
+            <!-- Indicators -->
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#testimonialCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                <button type="button" data-bs-target="#testimonialCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                <button type="button" data-bs-target="#testimonialCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Testimonials Grid -->
+    <div class="testimonials-container">
+        <h2 class="section-title text-center mb-5" style="font-size: 2rem;">More Success Stories</h2>
+        
+        <div class="testimonial-grid">
+            <!-- Testimonial 1 -->
+            <div class="testimonial-card neon-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">The customer segmentation tools helped us personalize our outreach like never before. Our conversion rates improved by 35% in just three months.</p>
+                    <div class="testimonial-author">
+                        <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Nia Thompson" class="author-avatar">
+                        <div class="author-info">
+                            <h4 class="author-name">Nia Thompson</h4>
+                            <p class="author-title">Sales Manager, Elevate Corp</p>
+                            <div class="author-rating">
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonial 2 -->
+            <div class="testimonial-card neon-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">Implementation was seamless with their onboarding team. We were up and running in days, not weeks. The ROI was immediate and substantial.</p>
+                    <div class="testimonial-author">
+                        <img src="https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Malik Johnson" class="author-avatar">
+                        <div class="author-info">
+                            <h4 class="author-name">Malik Johnson</h4>
+                            <p class="author-title">CTO, NexGen Analytics</p>
+                            <div class="author-rating">
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-half rating-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonial 3 -->
+            <div class="testimonial-card neon-card">
+                <div class="testimonial-content">
+                    <p class="testimonial-text">As an educator transitioning to edtech, I needed tools that were accessible. This platform made complex data simple to understand and act upon.</p>
+                    <div class="testimonial-author">
+                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Dr. Keisha Brown" class="author-avatar">
+                        <div class="author-info">
+                            <h4 class="author-name">Dr. Keisha Brown</h4>
+                            <p class="author-title">Director, LearnBright Academy</p>
+                            <div class="author-rating">
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                                <i class="bi bi-star-fill rating-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-rotate carousel every 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const myCarousel = new bootstrap.Carousel(document.getElementById('testimonialCarousel'), {
+                interval: 5000,
+                wrap: true
+            });
+            
+            // Pause on hover
+            const carouselElement = document.getElementById('testimonialCarousel');
+            carouselElement.addEventListener('mouseenter', function() {
+                myCarousel.pause();
+            });
+            carouselElement.addEventListener('mouseleave', function() {
+                myCarousel.cycle();
+            });
+        });
+    </script>
+</body>
+</html>

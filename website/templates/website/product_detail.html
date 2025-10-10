@@ -1,0 +1,436 @@
+{% load static %}
+{% load product_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} | Product Details</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #9150EC;
+            --secondary: #6c757d;
+            --success: #2ecc71;
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+            --border-radius: 12px;
+            --box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fafafa;
+            color: var(--dark-text);
+            padding-top: 20px;
+        }
+        
+        .product-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        
+        .product-card:hover {
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .product-image {
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            overflow: hidden;
+        }
+        
+        .product-image img {
+            transition: var(--transition);
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+        
+        .product-image:hover img {
+            transform: scale(1.03);
+        }
+        
+        .product-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--dark-text);
+        }
+        
+        .product-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            background-color: var(--light-bg);
+            border-radius: 8px;
+        }
+        
+        .detail-icon {
+            margin-right: 12px;
+            color: var(--primary);
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .delivery-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        
+        .delivery-local {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .delivery-exotic {
+            background-color: #ffecb3;
+            color: #f57c00;
+        }
+        
+        .btn-add-to-cart {
+            background-color: var(--primary);
+            border: none;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn-add-to-cart:hover {
+            background-color: #3651d3;
+            transform: translateY(-2px);
+        }
+        
+        .description-box {
+            background-color: var(--light-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+        }
+        
+        .stock-high {
+            color: var(--success);
+            font-weight: 600;
+        }
+        
+        .stock-medium {
+            color: #f39c12;
+            font-weight: 600;
+        }
+        
+        .stock-low {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .product-price {
+                font-size: 1.5rem;
+            }
+            
+            .detail-item {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% load product_extras %}
+    <div class="container py-4 product-container">
+        <div class="p-4">
+            <div class="row">
+                <!-- Product Image -->
+                <div class="col-lg-6">
+                    <div class="product-image">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded" />
+                        {% else %}
+                            <img src="{% static 'website/images/default-image.svg' %}" alt="No Image" class="img-fluid rounded" />
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Product Details -->
+                <div class="col-lg-6">
+                    <div class="column mb-3">
+                        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-arrow-left-circle me-2"></i> Home
+                        </a>
+                        <a href="{% url 'product_list' %}" class="btn btn-primary"style="background-color: #9150EC;">
+                            <i class="bi bi-cart-fill me-2"></i> Buy Now
+                        </a>
+                    </div>
+   
+                    <h1 class="product-title">{{ product.name }}</h1>
+                    <div class="product-price">${{ product.price }}</div>
+                    
+                    <div class="details-container">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-grid"></i></div>
+                                    <div><strong>Category:</strong> {{ product.category }}</div>
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-patch-check"></i></div>
+                                    <div><strong>Condition:</strong> {{ product.condition }}</div>
+                                </div>
+                            </div>
+
+                            {% if product.brand|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-tag"></i></div>
+                                    <div><strong>Brand:</strong> {{ product.brand }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.stock|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-box-seam"></i></div>
+                                    <div>
+                                        <strong>Stock:</strong>
+                                        <span class="{% if product.stock|to_int > 10 %}stock-high{% elif product.stock|to_int > 3 %}stock-medium{% else %}stock-low{% endif %}">
+                                            {{ product.stock }} available
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Delivery Info -->
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-truck"></i></div>
+                                    <div>
+                                        <strong>Delivery:</strong>
+                                        {% if product.location == "local" %}
+                                            <span class="delivery-badge delivery-local">1 day to your location</span>
+                                        {% elif product.location == "exotic" %}
+                                            <span class="delivery-badge delivery-exotic">2 weeks to your location</span>
+                                        {% else %}
+                                            Standard delivery
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modern spec grid: only show when not NA -->
+                            {% if product.brand_model|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-card-text"></i></div>
+                                    <div><strong>Model:</strong> {{ product.brand_model }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.color|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-droplet"></i></div>
+                                    <div><strong>Color:</strong> {{ product.color }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.storage_ram|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-hdd-stack"></i></div>
+                                    <div><strong>Storage / RAM:</strong> {{ product.storage_ram }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.network|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-signal"></i></div>
+                                    <div><strong>Network:</strong> {{ product.network }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.battery|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-battery-half"></i></div>
+                                    <div><strong>Battery:</strong> {{ product.battery }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.camera|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-camera-fill"></i></div>
+                                    <div><strong>Camera:</strong> {{ product.camera }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.screen|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-pencil-square"></i></div>
+                                    <div><strong>Screen:</strong> {{ product.screen }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.processor|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-cpu-fill"></i></div>
+                                    <div><strong>Processor:</strong> {{ product.processor }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.os|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-box-arrow-in-right"></i></div>
+                                    <div><strong>OS:</strong> {{ product.os }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.accessories|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-box-fill"></i></div>
+                                    <div><strong>Accessories:</strong> {{ product.accessories }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if product.warranty|is_meaningful %}
+                            <div class="col-6">
+                                <div class="detail-item">
+                                    <div class="detail-icon"><i class="bi bi-shield-check"></i></div>
+                                    <div><strong>Warranty:</strong> {{ product.warranty }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Description & Optional Details -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="description-box">
+                        {% if product.description|is_meaningful %}
+                            <h3 class="section-title">Description</h3>
+                            <p>{{ product.description }}</p>
+                        {% endif %}
+
+                        {% if product.optional_details|is_meaningful %}
+                            <h3 class="section-title">Additional Details</h3>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <p>{{ product.optional_details }}</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card shadow-sm border-0">
+                                        <div class="card-body">
+                                            <h6 class="mb-3">Quick Specs</h6>
+                                            <ul class="list-unstyled mb-0">
+                                                {% if product.storage_ram and product.storage_ram != 'NA' %}
+                                                    <li><strong>Storage:</strong> {{ product.storage_ram }}</li>
+                                                {% endif %}
+                                                {% if product.battery and product.battery != 'NA' %}
+                                                    <li><strong>Battery:</strong> {{ product.battery }}</li>
+                                                {% endif %}
+                                                {% if product.camera and product.camera != 'NA' %}
+                                                    <li><strong>Camera:</strong> {{ product.camera }}</li>
+                                                {% endif %}
+                                                {% if product.processor and product.processor != 'NA' %}
+                                                    <li><strong>Processor:</strong> {{ product.processor }}</li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Related Products -->
+                        <div class="mt-4">
+                            <h3 class="section-title">Related Products</h3>
+                            <div class="row">
+                                {% for related in related_products %}
+                                    <div class="col-md-3 mb-4">
+                                        <div class="card h-100 shadow-sm border-0">
+                                            <a href="{% url 'product_detail' related.id %}" class="text-decoration-none">
+                                                {% if related.image %}
+                                                    <img src="{{ related.image.url }}" class="card-img-top" alt="{{ related.name }}">
+                                                {% else %}
+                                                    <img src="{% static 'website/images/default-image.svg' %}" class="card-img-top" alt="No Image">
+                                                {% endif %}
+                                                <div class="card-body">
+                                                    <h6 class="card-title text-dark">{{ related.name }}</h6>
+                                                    <p class="card-text fw-bold" style="color: #9150EC;">${{ related.price }}</p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-muted">No related products found.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

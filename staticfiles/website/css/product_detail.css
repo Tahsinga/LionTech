@@ -1,0 +1,39 @@
+.product-container {
+  display: none; /* hidden by default, shown when image clicked */
+  padding-top: 12px; /* small gap below header */
+  background: #ffffff;
+}
+
+/* Ensure container appears below the top bar by adding top padding equal to header height via JS scroll; keep visual spacing */
+.product-container .product-image img {
+  max-height: 70vh;
+  width: 100%;
+  object-fit: contain;
+}
+
+.product-container .product-title {
+  font-size: 28px;
+  color: #232E3D;
+  font-weight: 700;
+}
+
+.product-container .product-price {
+  color: #9150EC;
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+/* make product container card-like */
+.product-container .p-4 {
+  background: linear-gradient(180deg, #ffffff, #fbfbfd);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(9, 30, 66, 0.08);
+}
+
+/* Responsive tweaks */
+@media (min-width: 992px) {
+  .product-container .product-image {
+    padding-right: 20px;
+  }
+}

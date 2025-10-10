@@ -1,0 +1,30 @@
+/* newArrival.css — scoped styles for the "New Arrival" section
+   Created to fix 404 when the page requests this stylesheet.
+   Add or refine rules below to match your design. */
+
+.new-arrival-section {
+  padding: 1.5rem 0;
+  background: #fff;
+}
+
+.new-arrival-card {
+  border: 0;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.new-arrival-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+}
+
+.new-arrival-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+/* small responsive tweaks */
+@media (max-width: 576px) {
+  .new-arrival-card img { height: 160px; }
+}
