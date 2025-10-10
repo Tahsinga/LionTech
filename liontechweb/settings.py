@@ -10,6 +10,14 @@ import os
 import sys
 from pathlib import Path
 
+# Load local environment variables from a .env file (optional, ignored by git)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    # python-dotenv is optional in production; ignore if not installed
+    pass
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
