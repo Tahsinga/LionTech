@@ -14,8 +14,14 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-av6tyl$acs--twu1=9zw@^+731wgnk8i_nygan((umxd!)a-hk')
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
+# In production require SECRET_KEY to be set. For local dev allow a fallback.
+if DEBUG:
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-av6tyl$acs--twu1=9zw@^+731wgnk8i_nygan((umxd!)a-hk')
+else:
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise RuntimeError('Missing SECRET_KEY environment variable')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
