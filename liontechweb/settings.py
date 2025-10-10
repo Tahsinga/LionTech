@@ -1,36 +1,35 @@
-
 """
 Django settings for liontechweb project.
-
-This file has been cleaned to remove duplicate imports and duplicate sections.
-It preserves the original settings and provides a clear static/media configuration.
+Cleaned and ready for Render deployment.
 """
 
 import os
-import sys
 from pathlib import Path
 
-# Load local environment variables from a .env file (optional, ignored by git)
+# Load local environment variables from a .env file (optional)
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except Exception:
-    # python-dotenv is optional in production; ignore if not installed
-    pass
+    pass  # python-dotenv optional
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
-# In production require SECRET_KEY to be set. For local dev allow a fallback.
-if DEBUG:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-av6tyl$acs--twu1=9zw@^+731wgnk8i_nygan((umxd!)a-hk')
-else:
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    if not SECRET_KEY:
+
+# SECRET_KEY
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        # fallback for local dev only
+        SECRET_KEY = 'django-insecure-dev-fallback-key'
+    else:
+        # Production must provide SECRET_KEY via env
         raise RuntimeError('Missing SECRET_KEY environment variable')
-# Normalize ALLOWED_HOSTS into a list (comma separated in env)
+
+# ALLOWED_HOSTS
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 
 # Application definition
@@ -61,12 +60,13 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'liontechweb.urls'
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,8 +81,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'liontechweb.wsgi.application'
 ASGI_APPLICATION = 'liontechweb.asgi.application'
 
-# Channels: prefer Redis in production (if REDIS_URL provided), otherwise use
-# in-memory layer for local development.
+# Channels configuration
 REDIS_URL = os.environ.get('REDIS_URL') or os.environ.get('CHANNEL_REDIS_URL')
 if REDIS_URL:
     CHANNEL_LAYERS = {
@@ -106,7 +105,6 @@ DATABASES = {
 if os.environ.get('DATABASE_URL'):
     try:
         import dj_database_url
-
         DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'))
     except Exception:
         pass
@@ -129,24 +127,20 @@ USE_TZ = True
 
 # Static and media files
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'website', 'static')]
-STATIC_ROOT = str(BASE_DIR / 'staticfiles')
+STATICFILES_DIRS = [BASE_DIR / 'website' / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = str(BASE_DIR / 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Optional: use S3 for media if requested via environment variables.
-# To enable in production set USE_S3=1 and provide the AWS credentials and bucket name.
+# Optional S3 for media
 USE_S3 = os.environ.get('USE_S3', '0').lower() in ('1', 'true', 'yes')
 if USE_S3:
     try:
-        # django-storages must be installed for S3 support. If it's not present,
-        # we gracefully fall back to the local filesystem storage.
-        from storages.backends.s3boto3 import S3Boto3Storage  # noqa: F401
-
+        from storages.backends.s3boto3 import S3Boto3Storage
         DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
         AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
@@ -155,5 +149,3 @@ if USE_S3:
         AWS_QUERYSTRING_AUTH = False
     except Exception:
         USE_S3 = False
-
-
