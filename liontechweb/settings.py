@@ -30,7 +30,8 @@ else:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
         raise RuntimeError('Missing SECRET_KEY environment variable')
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Normalize ALLOWED_HOSTS into a list (comma separated in env)
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 
 # Application definition
 INSTALLED_APPS = [
@@ -80,8 +81,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'liontechweb.wsgi.application'
 ASGI_APPLICATION = 'liontechweb.asgi.application'
 
-# Channels: simple in-memory layer for local development
-CHANNEL_LAYERS = {'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}}
+# Channels: prefer Redis in production (if REDIS_URL provided), otherwise use
+# in-memory layer for local development.
+REDIS_URL = os.environ.get('REDIS_URL') or os.environ.get('CHANNEL_REDIS_URL')
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {'hosts': [REDIS_URL]},
+        }
+    }
+else:
+    CHANNEL_LAYERS = {'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}}
 
 # Database
 DATABASES = {
@@ -126,5 +137,23 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = str(BASE_DIR / 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Optional: use S3 for media if requested via environment variables.
+# To enable in production set USE_S3=1 and provide the AWS credentials and bucket name.
+USE_S3 = os.environ.get('USE_S3', '0').lower() in ('1', 'true', 'yes')
+if USE_S3:
+    try:
+        # django-storages must be installed for S3 support. If it's not present,
+        # we gracefully fall back to the local filesystem storage.
+        from storages.backends.s3boto3 import S3Boto3Storage  # noqa: F401
+
+        DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+        AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', None)
+        AWS_QUERYSTRING_AUTH = False
+    except Exception:
+        USE_S3 = False
 
 
