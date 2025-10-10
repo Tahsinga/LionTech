@@ -1,6 +1,6 @@
 """
 Django settings for liontechweb project.
-Cleaned and ready for Render deployment.
+Corrected for local dev and Render deployment.
 """
 
 import os
@@ -17,14 +17,15 @@ except Exception:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ('1', 'true', 'yes')
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
 # SECRET_KEY
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     if DEBUG:
-        # fallback for local dev only
+        # Fallback for local dev
         SECRET_KEY = 'django-insecure-dev-fallback-key'
+        print("⚠️ Using fallback SECRET_KEY for local development.")
     else:
         # Production must provide SECRET_KEY via env
         raise RuntimeError('Missing SECRET_KEY environment variable')
