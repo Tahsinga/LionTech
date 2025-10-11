@@ -2028,7 +2028,7 @@
               <div class="bundle-card shadow-sm w-100">
                 <!-- Floating badge -->
                 <div class="position-absolute top-0 start-0 m-3">
-                  <span class="badge bg-gradient-info text-white px-3 py-2 rounded-pill shadow-sm">
+                  <span class="badge bg-gradient-info px-3 py-2 rounded-pill shadow-sm" style="color: black;">
                     {{ bundle.badge }}
                   </span>
                 </div>
@@ -2036,24 +2036,52 @@
                 <div class="row g-0 flex-grow-1">
                   <!-- Left side - Images -->
                   <div class="col-5 p-4 d-flex flex-column align-items-center justify-content-center bg-white">
-                    <div class="text-center">
-                      {% if bundle.image %}
-                      <img src="{{ bundle.image.url }}" alt="{{ bundle.title }}" class="img-fluid rounded-3 shadow-sm hover:scale-105 transition">
-                      {% else %}
-                      <img src="https://placehold.co/200x200/0d6efd/white?text=Product" alt="No image" class="img-fluid rounded-3 shadow-sm">
-                      {% endif %}
-                    </div>
+                    {# Vertical stacked images: top product image, plus sign, bottom product or bundle extra image #}
+                    <div class="d-flex flex-column align-items-center" style="gap:18px;">
+                      {% with products=bundle.products.all %}
+                        {% if products and products|length >= 1 %}
+                          {% with p=products.0 %}
+                            <a href="{% url 'product_detail' p.id %}" class="text-decoration-none d-flex align-items-center justify-content-center">
+                              {% if p.image %}
+                                <img src="{{ p.image.url }}" alt="{{ p.name }}" style="width:120px; height:120px; object-fit:cover; border-radius:8px;" />
+                              {% else %}
+                                <img src="{% static 'website/images/default-image.svg' %}" alt="No Image" style="width:120px; height:120px; object-fit:cover; border-radius:8px;" />
+                              {% endif %}
+                            </a>
+                          {% endwith %}
 
-                    <div class="text-muted fs-6 mb-3">
-                      <i class="bi bi-plus-lg"></i>
-                    </div>
+                          <div class="text-muted d-flex align-items-center justify-content-center" aria-hidden="true">
+                            <i class="bi bi-plus-lg" style="font-size:22px; color:#6b7280;"></i>
+                          </div>
 
-                    <div class="text-center">
-                      {% if bundle.image_2 %}
-                      <img src="{{ bundle.image_2.url }}" alt="{{ bundle.title }} extra" class="img-fluid rounded-3 shadow-sm hover:scale-105 transition">
-                      {% else %}
-                      <img src="https://placehold.co/200x200/198754/white?text=Extra" alt="No image" class="img-fluid rounded-3 shadow-sm">
-                      {% endif %}
+                          {% if products|length >= 2 %}
+                            {% with p=products.1 %}
+                              <a href="{% url 'product_detail' p.id %}" class="text-decoration-none d-flex align-items-center justify-content-center">
+                                {% if p.image %}
+                                  <img src="{{ p.image.url }}" alt="{{ p.name }}" style="width:120px; height:120px; object-fit:cover; border-radius:8px;" />
+                                {% else %}
+                                  <img src="{% static 'website/images/default-image.svg' %}" alt="No Image" style="width:120px; height:120px; object-fit:cover; border-radius:8px;" />
+                                {% endif %}
+                              </a>
+                            {% endwith %}
+                          {% else %}
+                            {# fallback to bundle.image_2 if second product not present #}
+                            {% if bundle.image_2 %}
+                              <img src="{{ bundle.image_2.url }}" alt="{{ bundle.title }} extra" style="width:120px; height:120px; object-fit:cover; border-radius:8px;" class="img-fluid rounded-3 shadow-sm" />
+                            {% else %}
+                              <img src="https://placehold.co/200x200/198754/white?text=Extra" alt="No image" style="width:120px; height:120px; object-fit:cover; border-radius:8px;" class="img-fluid rounded-3 shadow-sm" />
+                            {% endif %}
+                          {% endif %}
+
+                        {% else %}
+                          {# No bundle.products - show single extra image or placeholder #}
+                          {% if bundle.image_2 %}
+                            <img src="{{ bundle.image_2.url }}" alt="{{ bundle.title }} extra" style="width:160px; height:160px; object-fit:cover; border-radius:8px;" class="img-fluid rounded-3 shadow-sm" />
+                          {% else %}
+                            <img src="https://placehold.co/200x200/198754/white?text=No+Image" alt="No image" style="width:160px; height:160px; object-fit:cover; border-radius:8px;" class="img-fluid rounded-3 shadow-sm" />
+                          {% endif %}
+                        {% endif %}
+                      {% endwith %}
                     </div>
                   </div>
 
@@ -2062,45 +2090,7 @@
                     <div class="p-4 d-flex flex-column flex-grow-1">
                       <h4 class="mb-2 fw-bold text-dark" style="font-size: 30px;">{{ bundle.title }}</h4>
                       <p class="text-muted small mb-3">{{ bundle.description }}</p>
-
-                      <!-- Show up to 2 included products (thumbnail + brief info) -->
-                      <div class="d-flex gap-2 mb-3">
-                        {% comment %}Prefer server-provided product details; fallback to `bundle.products`{% endcomment %}
-                        {% if bundle.product_details %}
-                          {% for p in bundle.product_details|slice:":2" %}
-                            <div class="d-flex align-items-start" style="min-width:0;">
-                              <a href="{% url 'product_detail' p.id %}" class="text-decoration-none d-flex align-items-start">
-                                {% if p.image %}
-                                  <img src="{{ p.image.url }}" alt="{{ p.name }}" style="width:56px; height:56px; object-fit:cover; border-radius:6px;" />
-                                {% else %}
-                                  <img src="{% static 'website/images/default-image.svg' %}" alt="No Image" style="width:56px; height:56px; object-fit:cover; border-radius:6px;" />
-                                {% endif %}
-                                <div style="margin-left:8px; min-width:0;">
-                                  <div style="font-size:13px; font-weight:600; color:#222; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">{{ p.name }}</div>
-                                  <div style="font-size:12px; color:#6b7280;">{{ p.brand_model|default:p.brand|default:'' }}</div>
-                                </div>
-                              </a>
-                            </div>
-                          {% endfor %}
-                        {% elif bundle.products %}
-                          {% for p in bundle.products.all|slice:":2" %}
-                            <div class="d-flex align-items-start" style="min-width:0;">
-                              <a href="{% url 'product_detail' p.id %}" class="text-decoration-none d-flex align-items-start">
-                                {% if p.image %}
-                                  <img src="{{ p.image.url }}" alt="{{ p.name }}" style="width:56px; height:56px; object-fit:cover; border-radius:6px;" />
-                                {% else %}
-                                  <img src="{% static 'website/images/default-image.svg' %}" alt="No Image" style="width:56px; height:56px; object-fit:cover; border-radius:6px;" />
-                                {% endif %}
-                                <div style="margin-left:8px; min-width:0;">
-                                  <div style="font-size:13px; font-weight:600; color:#222; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">{{ p.name }}</div>
-                                  <div style="font-size:12px; color:#6b7280;">{{ p.brand_model|default:p.brand|default:'' }}</div>
-                                </div>
-                              </a>
-                            </div>
-                          {% endfor %}
-                        {% endif %}
-                      </div>
-
+                      
                       <!-- Pricing -->
                       <div class="mb-3">
                         <div class="h5 mb-0 text-primary fw-bold" style="font-size: 60px;">${{ bundle.price }}</div>

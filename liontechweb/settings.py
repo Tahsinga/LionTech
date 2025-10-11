@@ -34,7 +34,7 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get(
         'ALLOWED_HOSTS',
-        '127.0.0.1,localhost,liontech.onrender.com'
+        '127.0.0.1,localhost,liontech.onrender.com,192.168.43.73'
     ).split(',')
     if h.strip()
 ]
