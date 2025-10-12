@@ -463,7 +463,8 @@
                       <input type="hidden" name="condition" value="{{ product.condition }}">
                       <input type="hidden" name="category" value="{{ product.category }}">
                       {% if product.image %}
-                        <input type="hidden" name="image_url" value="{{ product.image.url }}">
+                        {# Use image.name (media-relative path) so server receives 'products/123.jpg' instead of '/media/...' #}
+                        <input type="hidden" name="image_url" value="{{ product.image.name }}">
                       {% else %}
                         <input type="hidden" name="image_url" value="{% static 'website/images/default-image.svg' %}">
                       {% endif %}
@@ -2426,7 +2427,7 @@
             <input type="hidden" name="price" id="inline_price" value="{{ product.price|default:'' }}">
             <input type="hidden" name="condition" id="inline_condition" value="{{ product.condition|default:'' }}">
             <input type="hidden" name="category" id="inline_category" value="{{ product.category|default:'' }}">
-            <input type="hidden" name="image_url" id="inline_image_url" value="{% if product.image %}{{ product.image.url }}{% else %}{% static 'website/images/default-image.svg' %}{% endif %}">
+            <input type="hidden" name="image_url" id="inline_image_url" value="{% if product.image %}{{ product.image.name }}{% else %}{% static 'website/images/default-image.svg' %}{% endif %}">
             <button type="submit" id="buyNowBtnInlineBtn" class="btn btn-primary" style="background-color:#9150EC; color: #fff;">
               <i class="bi bi-cart-fill me-1"></i> Buy Now
             </button>

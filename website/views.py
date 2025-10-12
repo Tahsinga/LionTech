@@ -327,7 +327,7 @@ def live_search_products(request):
             Q(category__icontains=query) |
             Q(color__icontains=query)
         )
-    serializer = ProductSerializer(products, many=True)
+    serializer = ProductSerializer(products, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -451,7 +451,7 @@ def bundle_detail(request, pk):
 @api_view(['GET'])
 def get_orders(request):
     orders = Order.objects.all().order_by('-date')
-    serializer = OrderSerializer(orders, many=True)
+    serializer = OrderSerializer(orders, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -483,7 +483,7 @@ def update_order_status(request, pk):
     order.delivery_status = status_val
     try:
         order.save()
-        serializer = OrderSerializer(order)
+        serializer = OrderSerializer(order, context={'request': request})
 
         # Best-effort broadcast to websocket group 'site_updates'
         try:
@@ -557,7 +557,7 @@ def get_products(request):
     paginator = PageNumberPagination()
     paginator.page_size = 6
     result_page = paginator.paginate_queryset(products, request)
-    serializer = ProductSerializer(result_page, many=True)
+    serializer = ProductSerializer(result_page, many=True, context={'request': request})
     return paginator.get_paginated_response(serializer.data)
 
 
@@ -586,10 +586,11 @@ def product_dashboard(request):
 class ProductCreateView(APIView):
     parser_classes = (MultiPartParser, FormParser)
     def post(self, request, format=None):
-        serializer = ProductSerializer(data=request.data)
+        serializer = ProductSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
+            product = serializer.save()
+            # Return serialized product with request context so ImageFields become absolute URLs
+            return Response(ProductSerializer(product, context={'request': request}).data, status=201)
         return Response(serializer.errors, status=400)
 
 
@@ -641,6 +642,8 @@ from decimal import Decimal
 from django.http import JsonResponse
 from django.utils import timezone
 from .models import cartOrder  # ✅ Make sure this import exists
+from urllib.parse import urlparse
+from django.conf import settings
 
 def addProduct_to_cart(request):
     if request.method == "POST":
@@ -658,6 +661,34 @@ def addProduct_to_cart(request):
         condition = request.POST.get("condition")
         category = request.POST.get("category")
         image_url = request.POST.get("image_url")
+
+        # Normalize image path before storing:
+        # - Accept absolute URLs (http/https) or relative paths (/media/... or media/...) or static paths
+        # - Store media-relative path like 'products/xxx.jpg' for ImageField compatibility
+        stored_image = ''
+        try:
+            if image_url:
+                img = image_url.strip()
+                # If absolute URL, extract path portion
+                if img.startswith('http://') or img.startswith('https://'):
+                    parsed = urlparse(img)
+                    img_path = parsed.path or ''
+                else:
+                    img_path = img
+                # Remove leading slashes
+                while img_path.startswith('/'):
+                    img_path = img_path[1:]
+                # If image path begins with MEDIA_URL (like 'media/products/...'), strip the leading 'media/'
+                media_prefix = settings.MEDIA_URL.lstrip('/') if getattr(settings, 'MEDIA_URL', '').startswith('/') else settings.MEDIA_URL
+                if media_prefix and img_path.startswith(media_prefix):
+                    img_path = img_path[len(media_prefix):]
+                # If the resulting path points to static assets, leave stored_image empty so default handling applies
+                if img_path.startswith('static/') or img_path.startswith('website/'):
+                    stored_image = ''
+                else:
+                    stored_image = img_path
+        except Exception:
+            stored_image = ''
 
         if not product_id or not name or not price:
             return JsonResponse({'success': False, 'message': 'Missing required fields.'}, status=400)
@@ -685,7 +716,7 @@ def addProduct_to_cart(request):
                 price=price_decimal,
                 condition=condition if condition else "N/A",
                 category=category if category else "Uncategorized",
-                image=image_url,
+                image=stored_image,
                 added_at=timezone.now(),
                 quantity=1
             )
@@ -705,13 +736,26 @@ def cart_api(request):
     subtotal = Decimal('0')
     items_list = []
     for item in cart_items:
+        # Build an absolute URL for the image when possible so front-end can use it directly
+        img_url = ''
+        try:
+            if item.image:
+                if item.image.startswith('http://') or item.image.startswith('https://'):
+                    img_url = item.image
+                else:
+                    # item.image is stored as a media-relative path like 'products/123.jpg'
+                    media_prefix = settings.MEDIA_URL if getattr(settings, 'MEDIA_URL', '/') else '/media/'
+                    img_url = request.build_absolute_uri('/' + media_prefix.lstrip('/') + item.image.lstrip('/'))
+        except Exception:
+            img_url = item.image or ''
+
         items_list.append({
             'product_id': item.product_id,
             'name': item.name,
             'quantity': item.quantity,
             'price': float(item.price),
             'total_price': float(item.total_price),
-            'image': item.image or '',
+            'image': img_url,
             'condition': item.condition or '',
             'category': item.category or '',
         })
@@ -813,6 +857,27 @@ def checkout(request):
 
         # Create orders
         for item in cart_items:
+            # Normalize cart item image into a media-relative path for Order.image
+            ord_img = ''
+            try:
+                img = (item.image or '').strip()
+                if img.startswith('http://') or img.startswith('https://'):
+                    # extract path and strip leading '/media/' if present
+                    parsed = urlparse(img)
+                    p = parsed.path or ''
+                else:
+                    p = img
+                while p.startswith('/'):
+                    p = p[1:]
+                media_prefix = settings.MEDIA_URL.lstrip('/') if getattr(settings, 'MEDIA_URL', '').startswith('/') else settings.MEDIA_URL
+                if media_prefix and p.startswith(media_prefix):
+                    p = p[len(media_prefix):]
+                # ensure we only store non-static media paths
+                if p and not p.startswith('static/') and not p.startswith('website/'):
+                    ord_img = p
+            except Exception:
+                ord_img = ''
+
             Order.objects.create(
                 first_name=first_name,
                 last_name=last_name,
@@ -823,7 +888,7 @@ def checkout(request):
                 quantity=item.quantity,
                 price=item.price,
                 total=item.price * item.quantity,
-                image=item.image,
+                image=ord_img,
                 delivery_cost=delivery_cost  # make sure this field exists in Order model
             )
         # Clear cart
@@ -921,6 +986,6 @@ def get_product_detail(request, pk):
         return Response({'detail': 'Not found'}, status=404)
 
     related = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
-    product_data = ProductSerializer(product).data
-    related_data = ProductSerializer(related, many=True).data
+    product_data = ProductSerializer(product, context={'request': request}).data
+    related_data = ProductSerializer(related, many=True, context={'request': request}).data
     return Response({'product': product_data, 'related': related_data})
