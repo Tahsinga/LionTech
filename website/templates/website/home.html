@@ -55,8 +55,8 @@
         .product-name { font-size: 16px; font-weight: 600; }
         .product-price { font-size: 15px; color: #1e3a8a; }
 
-        /* Cart layout becomes vertical */
-        .cart-content-grid { display: block; padding: 12px; }
+  /* Cart layout becomes vertical and summary first */
+  .cart-content-grid { display: flex; flex-direction: column-reverse; gap: 12px; padding: 12px; }
         .cart-items-section, .cart-summary-section { width: 100%; }
         .cart-items-section { margin-bottom: 16px; }
         .cart-item-card { display:flex; gap:10px; align-items:center; padding:10px; border-radius:8px; }
@@ -162,7 +162,7 @@
     </nav>
 
     <!-- Category Menu -->
-    <div id="categoryMenu" class="bg-light py-2 border-top">
+    <div id="categoryMenu" class="bg-light py-2 border-top categoryMenuMobile">
       <div id="cartSection" class="container mt-4 d-none">
         <!-- Cart content will load here -->
       </div>

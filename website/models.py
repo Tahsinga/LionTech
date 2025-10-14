@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Product(models.Model):
@@ -132,6 +133,9 @@ class Order(models.Model):
         choices=DELIVERY_STATUS_CHOICES,
         default="pending"
     )
+    # Link order to a user if available. For anonymous visitors we store a session key
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='orders')
+    session_key = models.CharField(max_length=40, blank=True, null=True)
 
 
     def save(self, *args, **kwargs):
@@ -197,6 +201,9 @@ class cartOrder(models.Model):
     condition = models.CharField(max_length=50, default="N/A")
     added_at = models.DateTimeField(default=timezone.now)  # Default for both old & new
     quantity = models.PositiveIntegerField(default=1)
+    # Owner / session key to scope cart items per visitor
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='cart_items')
+    session_key = models.CharField(max_length=40, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.quantity})"

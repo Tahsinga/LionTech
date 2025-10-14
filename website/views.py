@@ -40,16 +40,24 @@ def remove_from_cart(request, product_id):
         del cart[product_id_str]
         request.session['cart'] = cart
 
-    # Also remove any persistent cartOrder entries for this product
+    # Also remove any persistent cartOrder entries for this product (scope to user/session)
     try:
-        # cartOrder stores items added to cart in DB; remove matching product entries
-        deleted_count, _ = cartOrder.objects.filter(product_id=product_id).delete()
+        session_key = request.session.session_key
+        if request.user.is_authenticated:
+            qs = cartOrder.objects.filter(product_id=product_id, owner=request.user)
+        else:
+            qs = cartOrder.objects.filter(product_id=product_id, session_key=session_key)
+        deleted_count, _ = qs.delete()
     except Exception:
         # If something goes wrong, still return success=False
         return JsonResponse({'success': False, 'message': 'Failed to remove item from database.'})
 
     # Compute updated totals to return to client (helps UI update without extra fetch)
-    cart_items = cartOrder.objects.all()
+    if request.user.is_authenticated:
+        cart_items = cartOrder.objects.filter(owner=request.user)
+    else:
+        sk = request.session.session_key
+        cart_items = cartOrder.objects.filter(session_key=sk)
     subtotal = sum(item.price * item.quantity for item in cart_items) if cart_items else 0
     taxes = subtotal * Decimal('0.15') if subtotal else Decimal('0')
     total = subtotal + taxes if subtotal else Decimal('0')
@@ -175,16 +183,36 @@ def home(request):
         # products may not be iterable in some edge cases; ignore safely
         pass
 
-    # Cart totals
-    cartProducts = cartOrder.objects.annotate(
+    # Cart totals - scope to current user or session
+    session_key = None
+    try:
+        session_key = request.session.session_key
+    except Exception:
+        session_key = None
+
+    if request.user and request.user.is_authenticated:
+        cart_qs = cartOrder.objects.filter(owner=request.user)
+    else:
+        if not session_key:
+            try:
+                request.session.create()
+                session_key = request.session.session_key
+            except Exception:
+                session_key = None
+        cart_qs = cartOrder.objects.filter(session_key=session_key) if session_key else cartOrder.objects.none()
+
+    cartProducts = cart_qs.annotate(
         total_price=ExpressionWrapper(F('price') * F('quantity'), output_field=DecimalField())
     )
     subtotal = sum(item.price * item.quantity for item in cartProducts)
     taxes = subtotal * Decimal('0.15')
     total = subtotal + taxes
 
-    # Orders
-    orders = Order.objects.all().order_by('-date')
+    # Orders - scope to current user or session
+    if request.user and request.user.is_authenticated:
+        orders = Order.objects.filter(owner=request.user).order_by('-date')
+    else:
+        orders = Order.objects.filter(session_key=session_key).order_by('-date') if session_key else Order.objects.none()
     # Try to attach a product_id attribute to orders when possible.
     # We avoid changing the DB schema now; instead, perform a best-effort lookup
     # by matching the order.product string to an existing Product name.
@@ -293,11 +321,33 @@ def update_cart_quantity(request):
     quantity = int(request.POST.get('quantity', 1))
     
     try:
-        cart_item = cartOrder.objects.get(product_id=product_id)
+        # Scope lookup by user or session
+        session_key = None
+        try:
+            session_key = request.session.session_key
+        except Exception:
+            session_key = None
+
+        if request.user and request.user.is_authenticated:
+            cart_item = cartOrder.objects.get(product_id=product_id, owner=request.user)
+        else:
+            if not session_key:
+                try:
+                    request.session.create()
+                    session_key = request.session.session_key
+                except Exception:
+                    session_key = None
+            cart_item = cartOrder.objects.get(product_id=product_id, session_key=session_key)
+
         cart_item.quantity = quantity
         cart_item.save()
 
-        cart_items = cartOrder.objects.all()
+        # Recompute scoped totals
+        if request.user and request.user.is_authenticated:
+            cart_items = cartOrder.objects.filter(owner=request.user)
+        else:
+            cart_items = cartOrder.objects.filter(session_key=session_key) if session_key else cartOrder.objects.none()
+
         subtotal = sum(item.price * item.quantity for item in cart_items)
         taxes = subtotal * Decimal('0.15')
         total = subtotal + taxes
@@ -450,7 +500,17 @@ def bundle_detail(request, pk):
 
 @api_view(['GET'])
 def get_orders(request):
-    orders = Order.objects.all().order_by('-date')
+    # Scope orders to authenticated user or session
+    session_key = None
+    try:
+        session_key = request.session.session_key
+    except Exception:
+        session_key = None
+
+    if request.user and request.user.is_authenticated:
+        orders = Order.objects.filter(owner=request.user).order_by('-date')
+    else:
+        orders = Order.objects.filter(session_key=session_key).order_by('-date') if session_key else Order.objects.none()
     serializer = OrderSerializer(orders, many=True, context={'request': request})
     return Response(serializer.data)
 
@@ -461,8 +521,18 @@ def update_order_status(request, pk):
 
     Accepts JSON body: { "delivery_status": "pending|shipped|delivered" }
     """
+    # Ensure the order belongs to the requesting user/session
+    session_key = None
     try:
-        order = Order.objects.get(pk=pk)
+        session_key = request.session.session_key
+    except Exception:
+        session_key = None
+
+    try:
+        if request.user and request.user.is_authenticated:
+            order = Order.objects.get(pk=pk, owner=request.user)
+        else:
+            order = Order.objects.get(pk=pk, session_key=session_key)
     except Order.DoesNotExist:
         return Response({'detail': 'Not found'}, status=404)
 
@@ -539,8 +609,18 @@ def remove_order(request):
     if not order_id:
         return JsonResponse({'success': False, 'message': 'Missing order id'}, status=400)
 
+    # Ensure the order belongs to the current user/session before deleting
+    session_key = None
     try:
-        order = Order.objects.get(pk=order_id)
+        session_key = request.session.session_key
+    except Exception:
+        session_key = None
+
+    try:
+        if request.user and request.user.is_authenticated:
+            order = Order.objects.get(pk=order_id, owner=request.user)
+        else:
+            order = Order.objects.get(pk=order_id, session_key=session_key)
     except Order.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
 
@@ -620,16 +700,28 @@ def place_order(request):
                 continue
 
             total = quantity * price
-            Order.objects.create(
-                first_name=first_name,
-                last_name=last_name,
-                phone_number=phone_number,
-                location=location,
-                product=product_name,
-                quantity=quantity,
-                price=price,
-                total=total
-            )
+            # Attach owner or session_key to the order for scoping
+            order_kwargs = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'phone_number': phone_number,
+                'location': location,
+                'product': product_name,
+                'quantity': quantity,
+                'price': price,
+                'total': total,
+            }
+            try:
+                if request.user and request.user.is_authenticated:
+                    order_kwargs['owner'] = request.user
+                else:
+                    if not request.session.session_key:
+                        request.session.save()
+                    order_kwargs['session_key'] = request.session.session_key
+            except Exception:
+                pass
+
+            Order.objects.create(**order_kwargs)
 
         return JsonResponse({'status': 'success'}, status=200)
 
@@ -641,7 +733,7 @@ def place_order(request):
 from decimal import Decimal
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import cartOrder  # ✅ Make sure this import exists
+from .models import cartOrder, Product  # ✅ Make sure these imports exist
 from urllib.parse import urlparse
 from django.conf import settings
 
@@ -696,8 +788,22 @@ def addProduct_to_cart(request):
         try:
             price_decimal = Decimal(price)
             pid_int = int(product_id)
-            # If the same product already exists in cartOrder, increment quantity
-            existing = cartOrder.objects.filter(product_id=pid_int).first()
+
+            # Ensure product exists and is available before adding to cart
+            prod = Product.objects.filter(pk=pid_int).first()
+            if not prod:
+                return JsonResponse({'success': False, 'message': 'Product not found.'}, status=404)
+            if not getattr(prod, 'available', True):
+                return JsonResponse({'success': False, 'message': 'Product is out of stock.'}, status=400)
+
+            # If the same product already exists in this visitor's cart, increment quantity
+            if request.user.is_authenticated:
+                existing = cartOrder.objects.filter(product_id=pid_int, owner=request.user).first()
+            else:
+                if not request.session.session_key:
+                    request.session.save()
+                existing = cartOrder.objects.filter(product_id=pid_int, session_key=request.session.session_key).first()
+
             if existing:
                 existing.quantity = (existing.quantity or 0) + 1
                 # update price if needed (keep existing price otherwise)
@@ -706,11 +812,15 @@ def addProduct_to_cart(request):
                 except Exception:
                     pass
                 existing.save()
-                total_items = sum(item.quantity for item in cartOrder.objects.all())
-                return JsonResponse({'success': True, 'message': 'Product Successfull updated to cart.', 'product_id': pid_int, 'quantity': existing.quantity, 'cart_count': total_items})
+                # compute scoped total
+                if request.user.is_authenticated:
+                    total_items = sum(item.quantity for item in cartOrder.objects.filter(owner=request.user))
+                else:
+                    total_items = sum(item.quantity for item in cartOrder.objects.filter(session_key=request.session.session_key))
+                return JsonResponse({'success': True, 'message': 'Product Successfully updated in cart.', 'product_id': pid_int, 'quantity': existing.quantity, 'cart_count': total_items})
 
-            # Create new cart item if not existing
-            cartOrder.objects.create(
+            # Create new cart item if not existing. Attach owner or session_key for scoping.
+            kwargs = dict(
                 product_id=pid_int,
                 name=name,
                 price=price_decimal,
@@ -720,7 +830,18 @@ def addProduct_to_cart(request):
                 added_at=timezone.now(),
                 quantity=1
             )
-            total_items = sum(item.quantity for item in cartOrder.objects.all())
+            if request.user.is_authenticated:
+                kwargs['owner'] = request.user
+            else:
+                if not request.session.session_key:
+                    request.session.save()
+                kwargs['session_key'] = request.session.session_key
+
+            cartOrder.objects.create(**kwargs)
+            if request.user.is_authenticated:
+                total_items = sum(item.quantity for item in cartOrder.objects.filter(owner=request.user))
+            else:
+                total_items = sum(item.quantity for item in cartOrder.objects.filter(session_key=request.session.session_key))
             return JsonResponse({'success': True, 'message': 'Product added to cart.', 'product_id': pid_int, 'quantity': 1, 'cart_count': total_items})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=500)
@@ -730,7 +851,15 @@ def addProduct_to_cart(request):
 # ---------------- CART API ---------------- #
 
 def cart_api(request):
-    cart_items = cartOrder.objects.annotate(
+    # Scope cart items to current user or session
+    if request.user.is_authenticated:
+        cart_items_qs = cartOrder.objects.filter(owner=request.user)
+    else:
+        if not request.session.session_key:
+            request.session.save()
+        cart_items_qs = cartOrder.objects.filter(session_key=request.session.session_key)
+
+    cart_items = cart_items_qs.annotate(
         total_price=ExpressionWrapper(F('price') * F('quantity'), output_field=DecimalField())
     )
     subtotal = Decimal('0')
@@ -777,7 +906,13 @@ def cart_api(request):
 # ---------------- CHECKOUT ---------------- #
 
 def checkout(request):
-    cart_items = cartOrder.objects.all()
+    # Scope cart items to current user or session
+    if request.user.is_authenticated:
+        cart_items = cartOrder.objects.filter(owner=request.user)
+    else:
+        if not request.session.session_key:
+            request.session.save()
+        cart_items = cartOrder.objects.filter(session_key=request.session.session_key)
     subtotal = sum(item.price * item.quantity for item in cart_items)
 
     # Default values
@@ -878,21 +1013,39 @@ def checkout(request):
             except Exception:
                 ord_img = ''
 
-            Order.objects.create(
-                first_name=first_name,
-                last_name=last_name,
-                phone_number=phone,
-                location=address,
-                delivery_notes=notes,
-                product=item.name,
-                quantity=item.quantity,
-                price=item.price,
-                total=item.price * item.quantity,
-                image=ord_img,
-                delivery_cost=delivery_cost  # make sure this field exists in Order model
-            )
-        # Clear cart
-        cartOrder.objects.all().delete()
+            order_kwargs = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'phone_number': phone,
+                'location': address,
+                'delivery_notes': notes,
+                'product': item.name,
+                'quantity': item.quantity,
+                'price': item.price,
+                'total': item.price * item.quantity,
+                'image': ord_img,
+                'delivery_cost': delivery_cost
+            }
+            try:
+                if request.user and request.user.is_authenticated:
+                    order_kwargs['owner'] = request.user
+                else:
+                    if not request.session.session_key:
+                        request.session.save()
+                    order_kwargs['session_key'] = request.session.session_key
+            except Exception:
+                pass
+
+            Order.objects.create(**order_kwargs)
+        # Clear cart for current user/session only
+        if request.user and request.user.is_authenticated:
+            cartOrder.objects.filter(owner=request.user).delete()
+        else:
+            if request.session.session_key:
+                cartOrder.objects.filter(session_key=request.session.session_key).delete()
+            else:
+                # nothing to delete if session unknown
+                pass
         return redirect("home")
 
     # GET request: show checkout page
@@ -941,16 +1094,36 @@ def product_detail(request, product_id):
     page_number = request.GET.get("page")
     products = paginator.get_page(page_number)
 
-    # Cart totals
-    cartProducts = cartOrder.objects.annotate(
+    # Cart totals - scope to current user/session
+    session_key = None
+    try:
+        session_key = request.session.session_key
+    except Exception:
+        session_key = None
+
+    if request.user and request.user.is_authenticated:
+        cart_qs = cartOrder.objects.filter(owner=request.user)
+    else:
+        if not session_key:
+            try:
+                request.session.create()
+                session_key = request.session.session_key
+            except Exception:
+                session_key = None
+        cart_qs = cartOrder.objects.filter(session_key=session_key) if session_key else cartOrder.objects.none()
+
+    cartProducts = cart_qs.annotate(
         total_price=ExpressionWrapper(F('price') * F('quantity'), output_field=DecimalField())
     )
     subtotal = sum(item.price * item.quantity for item in cartProducts)
     taxes = subtotal * Decimal('0.15')
     total = subtotal + taxes
 
-    # Orders
-    orders = Order.objects.all().order_by('-date')
+    # Orders - scope to current user/session
+    if request.user and request.user.is_authenticated:
+        orders = Order.objects.filter(owner=request.user).order_by('-date')
+    else:
+        orders = Order.objects.filter(session_key=session_key).order_by('-date') if session_key else Order.objects.none()
     total_price = sum(order.total for order in orders)
     today_date = timezone.now().strftime("%B %d, %Y")
 

@@ -119,6 +119,8 @@ body {
   border-top: 1px solid #eee;
   padding: 0.75rem 0;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  /* baseline spacing so category menu has space below on all viewports */
+  margin-bottom: 40px;
 }
 
 #categoryMenu .nav-link {
@@ -581,7 +583,24 @@ color: #9150EC;
   .navbar-brand span {
     font-size: 1.5rem;
   }
-  
+
+  .sidebar {
+    display: none;
+  }
+  .deal-of-the-day {
+    display: none;
+  }
+  .categoryMenu {
+    margin-bottom: 40px;
+  }
+  /* ensure selector matches markup: the template uses id="categoryMenu" and class="categoryMenuMobile" */
+  #categoryMenu{
+    margin-bottom: 100px;
+  }
+  #bundles {
+    display: none;
+  }
+    
   #categoryMenu .nav-link {
     padding: 0.5rem;
     font-size: 0.9rem;
@@ -632,4 +651,66 @@ header,
   font-size: 1rem;
   line-height: 1.6;
   font-weight: 400;
+}
+
+/* Mobile-first cart layout improvements */
+@media (max-width: 768px) {
+  /* Make the cart grid stack with the summary first */
+  .cart-content-grid {
+    display: flex;
+    flex-direction: column-reverse; /* summary will be visually on top */
+    gap: 1rem;
+  }
+
+  /* Summary card: compact, elevated, and sticky near top of viewport */
+  .summary-card {
+    background: linear-gradient(180deg, #ffffff, #fbfbff);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.04);
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+  }
+
+  .summary-card h3 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+
+  .summary-row { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; }
+
+  .checkout-btn { width: 100%; padding: 0.75rem; border-radius: 10px; }
+
+  /* Make form inputs easier to tap */
+  .modern-select, .modern-select:focus, .checkout-btn, .summary-card input, .summary-card textarea {
+    font-size: 1rem;
+    padding: 0.85rem 0.9rem;
+    border-radius: 10px;
+  }
+
+  /* Cart items should flow below summary now */
+  .cart-items-section {
+    order: 2;
+  }
+
+  .cart-summary-section {
+    order: 1;
+  }
+
+  /* Make cart item cards more compact and touch-friendly */
+  .cart-item-card {
+    display: grid;
+    grid-template-columns: 76px 1fr 64px;
+    gap: 8px;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    margin-bottom: 0.75rem;
+  }
+
+  .product-image-container img { width: 76px; height: 76px; object-fit: cover; border-radius: 8px; }
+
+  .quantity-control { display:flex; gap:6px; align-items:center; justify-content:center }
+  .quantity-btn { padding:6px 8px; border-radius:6px; }
 }
