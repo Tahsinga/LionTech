@@ -55,8 +55,8 @@
         .product-name { font-size: 16px; font-weight: 600; }
         .product-price { font-size: 15px; color: #1e3a8a; }
 
-  /* Cart layout becomes vertical and summary first */
-  .cart-content-grid { display: flex; flex-direction: column-reverse; gap: 12px; padding: 12px; }
+        /* Cart layout becomes vertical */
+        .cart-content-grid { display: block; padding: 12px; }
         .cart-items-section, .cart-summary-section { width: 100%; }
         .cart-items-section { margin-bottom: 16px; }
         .cart-item-card { display:flex; gap:10px; align-items:center; padding:10px; border-radius:8px; }
@@ -162,7 +162,7 @@
     </nav>
 
     <!-- Category Menu -->
-    <div id="categoryMenu" class="bg-light py-2 border-top categoryMenuMobile">
+    <div id="categoryMenu" class="bg-light py-2 border-top">
       <div id="cartSection" class="container mt-4 d-none">
         <!-- Cart content will load here -->
       </div>
@@ -752,9 +752,248 @@
     </div>
   </div>
 
-  <!-- New Add to Cart page -->
   <div id="products_addto_cart" style="display: none;"> 
-    <div class="cart-container">
+    <!-- New Add to Cart page -->
+      <div id="products_addto_cart_Mobile" class="products_addto_cart_Mobile">
+        <!-- New Add to Cart page -->
+        <div id="products_addto_cart_mobile_inner">
+          <div class="cart-container mobile-cart">
+          <main class="cart-main-content">
+            <div class="cart-header">
+              <div class="cart-title">
+                <i class="fas fa-shopping-cart" style="color: #cc4f1e;"></i>
+                <h1>Your Shopping Cart</h1>
+              </div>
+            </div>
+
+            <!-- Stack layout (TOP → BOTTOM) -->
+            <div class="cart-vertical-layout">
+
+              <!-- CUSTOMER INFO AT TOP -->
+              <div class="customer-info-card">
+                <h3>Customer Information</h3>
+                <form method="POST" action="{% url 'checkout' %}">
+                  {% csrf_token %}
+
+                  <div class="form-group">
+                    <label for="fullname">Full Name</label><br>
+                    <input style="width: 100%;" type="text" name="fullname" id="fullname" placeholder="John Doe" class="modern-select" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="phone">Phone Number</label><br>
+                    <input style="width: 100%;" type="tel" name="phone" id="phone" placeholder="+263 771 234 567" class="modern-select" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="email">Email</label><br>
+                    <input style="width: 100%;" type="email" name="email" id="email" placeholder="john@gmail.com" class="modern-select" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="delivery-location" class="dropdown-label">Select City</label><br>
+                    <select style="width: 100%;" id="delivery-location" name="delivery_location" class="modern-select" required>
+                      <option value="">Select your location</option>
+                      <option value="harare">Harare</option>
+                      <option value="bulawayo">Bulawayo</option>
+                      <option value="mutare">Mutare</option>
+                      <option value="gweru">Gweru</option>
+                      <option value="masvingo">Masvingo</option>
+                      <option value="kadoma">Kadoma</option>
+                      <option value="kwekwe">Kwekwe</option>
+                      <option value="marondera">Marondera</option>
+                      <option value="chegutu">Chegutu</option>
+                      <option value="bindura">Bindura</option>
+                      <option value="chipinge">Chipinge</option>
+                      <option value="chinhoyi">Chinhoyi</option>
+                      <option value="mutoko">Mutoko</option>
+                      <option value="ruwa">Ruwa</option>
+                      <option value="checheche">Checheche</option>
+                      <option value="masvingo town">Masvingo Town</option>
+                      <option value="shurugwi">Shurugwi</option>
+                      <option value="redcliff">Redcliff</option>
+                      <option value="gokwe">Gokwe</option>
+                      <option value="beitbridge">Beitbridge</option>
+                      <option value="chisumbanje">Chisumbanje</option>
+                      <option value="murewa">Murewa</option>
+                      <option value="maramba">Maramba</option>
+                      <option value="esigodini">Esigodini</option>
+                      <option value="zvishavane">Zvishavane</option>
+                      <option value="mutare suburbs">Mutare Suburbs</option>
+                      <option value="harare suburbs">Harare Suburbs</option>
+                      <option value="bulawayo suburbs">Bulawayo Suburbs</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="address">Shipping Address</label><br>
+                    <textarea style="width: 100%;" name="address" id="address" rows="3"
+                      placeholder="123 Main St, Apt 4B&#10;New York, NY 10001" class="modern-select" required></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="notes">Delivery Notes (Optional)</label><br>
+                    <textarea style="width: 100%;" name="notes" id="notes" rows="2"
+                      placeholder="Leave at front door if I'm not home" class="modern-select"></textarea>
+                  </div>
+
+                  <div class="line"></div>
+              </div>
+
+              <!-- PRODUCTS IN THE MIDDLE -->
+              <div class="cart-items-section">
+                <h2>Products</h2>
+                <div class="cart-items-header">
+                  <span>Item</span>
+                  <span>Price</span>
+                </div>
+
+                {% if cartProducts %}
+                {% for item in cartProducts %}
+                <div class="cart-item-card" data-product-id="{{ item.product_id }}">
+                  <div class="product-image-container">
+                    {% if item.image %}
+                    <img src="{{ item.image }}" alt="{{ item.name }}" class="clickable-image" data-product-id="{{ item.product_id }}" title="View product details">
+                    {% else %}
+                    <img src="https://via.placeholder.com/120x120?text=No+Image" alt="No Image Available" class="clickable-image" data-product-id="{{ item.product_id }}" title="View product details">
+                    {% endif %}
+                  </div>
+                  <div class="product-details">
+                    <h3 class="product-title">{{ item.name }}</h3>
+                    <div class="product-specs">
+                      Condition: {{ item.condition|default:"N/A" }}<br>
+                      Category: {{ item.category|default:"Uncategorized" }}
+                    </div>
+                    <div class="quantity-control">
+                      <button class="quantity-btn" data-action="decrease" data-product-id="{{ item.product_id }}">-</button>
+                      <span class="quantity-value">{{ item.quantity }}</span>
+                      <button class="quantity-btn" data-action="increase" data-product-id="{{ item.product_id }}">+</button>
+                    </div>
+                    <div class="product-price">
+                      $<strong><span class="item-total">{{ item.total_price|floatformat:2 }}</span></strong>
+                    </div>
+                    <div class="product-actions">
+                      <button class="remove-btn" data-product-id="{{ item.product_id }}">
+                        <i class="far fa-trash-alt"></i> Remove
+                      </button>
+                      <button class="save-btn clickable-image" data-product-id="{{ item.product_id }}" title="View product details">
+                        <i class="far fa-heart"></i> Product Detail
+                      </button>
+                    </div>
+                  </div>
+                  
+                </div>
+                {% endfor %}
+                {% else %}
+                <p>Your cart is empty.</p>
+                {% endif %}
+              </div>
+
+              <!-- SUMMARY AT BOTTOM -->
+              <div class="summary-card">
+                <h3>Order Summary</h3>
+                <div class="summary-row">
+                  <span>Subtotal (<span class="total-items">{{ cart_items|length }}</span> items)</span>
+                  <span>$<span class="subtotal-amount">{{ subtotal }}</span></span>
+                </div>
+
+                <div class="summary-row">
+                  <span>Tax (15%)</span>
+                  <span>$<span class="tax-amount">{{ taxes }}</span></span>
+                </div>
+
+                <div class="summary-row">
+                  <span>Delivery Cost</span>
+                  <span>$<span id="delivery-cost-amount">{{ delivery_cost|default:"0.00" }}</span></span>
+                </div>
+
+                <div class="line"></div>
+
+                <div class="summary-row total">
+                  <span>Total</span>
+                  <span>$<span id="grand-total-amount">{{ total|default:"0.00" }}</span></span>
+                </div>
+
+                <input type="hidden" name="delivery_cost" id="delivery_cost_input" value="{{ delivery_cost|default:'0.00' }}">
+
+                <button type="submit" class="checkout-btn">Proceed to Checkout</button>
+
+                <div class="payment-methods">
+                  <i class="fab fa-cc-visa"></i>
+                  <i class="fab fa-cc-mastercard"></i>
+                  <i class="fab fa-cc-amex"></i>
+                  <i class="fab fa-cc-paypal"></i>
+                </div>
+
+                <button type="reset" class="reset-btn">
+                  <i class="fas fa-redo-alt"></i> Reset Form
+                </button>
+              </div>
+
+              </form>
+            </div>
+          </main>
+        </div>
+      </div>
+
+      <style>
+        .cart-vertical-layout {
+          display: flex;
+          flex-direction: column;
+          gap: 25px;
+        }
+
+        .customer-info-card,
+        .cart-items-section,
+        .summary-card {
+          background: #fff;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .checkout-btn {
+          width: 100%;
+          padding: 12px;
+          background: #cc4f1e;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          margin-top: 10px;
+          cursor: pointer;
+        }
+
+        .checkout-btn:hover {
+          background: #b03d13;
+        }
+
+        .reset-btn {
+          margin-top: 10px;
+          width: 100%;
+          padding: 10px;
+          background: #f1f1f1;
+          border: none;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        .reset-btn:hover {
+          background: #e3e3e3;
+        }
+
+        .line {
+          width: 100%;
+          height: 2px;
+          background-color: #ddd;
+          margin: 15px 0;
+        }
+      </style>
+
+  </div> 
+    
+  <div class="cart-container desktop-cart">
       <main class="cart-main-content">
         <div class="cart-header">
           <div class="cart-title">
@@ -2397,62 +2636,261 @@
 
   <!-- this is the product details page  -->
   <div id="product_details_page" style="display: none; padding-top:20px; padding-bottom:20px;">
-    <div class="row gy-4 align-items-start" style="margin-left:250px !important;">
-      <!-- Left: small stacked thumbnails -->
-      <div class="col-lg-2 d-none d-lg-block" style="position:relative; margin-top: 100px; z-index:12; margin-right:0 !important; padding-right:0 !important;">
-        <div class="product-thumbs d-flex flex-column" style="max-width:200px; padding-right:0; gap:10px;">
-          <!-- thumbnails populated by JS -->
+    <div class="DesktopView">
+      <div class="row gy-4 align-items-start" style="margin-left:250px !important;">
+        <!-- Left: small stacked thumbnails -->
+        <div class="col-lg-2 d-none d-lg-block" style="position:relative; margin-top: 100px; z-index:12; margin-right:0 !important; padding-right:0 !important;">
+          <div class="product-thumbs d-flex flex-column" style="max-width:200px; padding-right:0; gap:10px;">
+            <!-- thumbnails populated by JS -->
+          </div>
+        </div>
+
+        <!-- Middle: large main image -->
+        <div class="col-12 col-lg-6 text-center" style="padding-left:4px !important;">
+          <div class="product-image-main" style="min-height:600px; display:flex; align-items:center; justify-content:center; padding-left:4px !important;">
+            <img id="mainProductImage" src="{% static 'website/images/default-image.svg' %}" alt="Product image" class="img-fluid rounded shadow-sm" style="max-height:80vh; max-width:100%; width:100%; height:auto; object-fit:contain;">
+          </div>
+        </div>
+
+        <!-- Right: product details -->
+        <div class="col-12 col-lg-4" style="padding-left:20px !important; max-width:400px;">
+          <div class="mb-3 d-flex gap-2">
+            <a href="" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left-circle me-1"></i> Products
+            </a>
+            <!-- Inline Buy Now: submit the same fields as product cards to addProduct_to_cart -->
+            <form method="POST" action="{% url 'addProduct_to_cart' %}" class="d-inline-block m-0 p-0" id="inlineBuyForm">
+              {% csrf_token %}
+              <!-- Ensure hidden inputs always exist; JS will populate values when product loads -->
+              <input type="hidden" name="product_id" id="inline_product_id" value="{{ product.id|default:'' }}">
+              <input type="hidden" name="name" id="inline_name" value="{{ product.name|default:'' }}">
+              <input type="hidden" name="price" id="inline_price" value="{{ product.price|default:'' }}">
+              <input type="hidden" name="condition" id="inline_condition" value="{{ product.condition|default:'' }}">
+              <input type="hidden" name="category" id="inline_category" value="{{ product.category|default:'' }}">
+              <input type="hidden" name="image_url" id="inline_image_url" value="{% if product.image %}{{ product.image.name }}{% else %}{% static 'website/images/default-image.svg' %}{% endif %}">
+              <button type="submit" id="buyNowBtnInlineBtn" class="btn btn-primary" style="background-color:#9150EC; color: #fff;">
+                <i class="bi bi-cart-fill me-1"></i> Buy Now
+              </button>
+            </form>
+          </div>
+
+          <h2 class="product-title mb-2">{{ product.name }}</h2>
+          <div class="product-price mb-3">${{ product.price }}</div>
+
+          <!-- Product Details -->
+          <div class="details-container p-3">
+            {% if product.category|is_meaningful %}
+              <div class="detail-item"><span class="label">Category</span><span class="value">{{ product.category }}</span></div>
+            {% endif %}
+
+            {% if product.condition|is_meaningful %}
+              <div class="detail-item"><span class="label">Condition</span><span class="value">{{ product.condition }}</span></div>
+            {% endif %}
+
+            {% if product.brand_model|is_meaningful %}
+              <div class="detail-item"><span class="label">Model</span><span class="value">{{ product.brand_model }}</span></div>
+            {% elif product.brand|is_meaningful %}
+              <div class="detail-item"><span class="label">Brand</span><span class="value">{{ product.brand }}</span></div>
+            {% endif %}
+
+            {% if product.stock|is_meaningful %}
+              <div class="detail-item"><span class="label">Stock</span>
+                <span class="value">
+                  {% if product.stock|to_int == 0 %}
+                    <span class="text-danger fw-bold">Out of stock</span>
+                  {% else %}
+                    {{ product.stock }} available
+                  {% endif %}
+                </span>
+              </div>
+            {% endif %}
+
+            {% if product.location|is_meaningful %}
+              <div class="detail-item"><span class="label">Delivery</span>
+                <span class="value">{% if product.location == 'local' %}Tomorrow{% elif product.location == 'exotic' %}2 Weeks{% else %}Standard{% endif %}</span>
+              </div>
+            {% endif %}
+
+            {% if product.color|is_meaningful %}
+              <div class="detail-item"><span class="label">Color</span><span class="value">{{ product.color }}</span></div>
+            {% endif %}
+
+            {% if product.storage_ram|is_meaningful %}
+              <div class="detail-item"><span class="label">Storage / RAM</span><span class="value">{{ product.storage_ram }}</span></div>
+            {% endif %}
+
+            {% if product.network|is_meaningful %}
+              <div class="detail-item"><span class="label">Network</span><span class="value">{{ product.network }}</span></div>
+            {% endif %}
+
+            {% if product.battery|is_meaningful %}
+              <div class="detail-item"><span class="label">Battery</span><span class="value">{{ product.battery }}</span></div>
+            {% endif %}
+
+            {% if product.camera|is_meaningful %}
+              <div class="detail-item"><span class="label">Camera</span><span class="value">{{ product.camera }}</span></div>
+            {% endif %}
+
+            {% if product.screen|is_meaningful %}
+              <div class="detail-item"><span class="label">Screen</span><span class="value">{{ product.screen }}</span></div>
+            {% endif %}
+
+            {% if product.processor|is_meaningful %}
+              <div class="detail-item"><span class="label">Processor</span><span class="value">{{ product.processor }}</span></div>
+            {% endif %}
+
+            {% if product.os|is_meaningful %}
+              <div class="detail-item"><span class="label">OS</span><span class="value">{{ product.os }}</span></div>
+            {% endif %}
+
+            {% if product.accessories|is_meaningful %}
+              <div class="detail-item"><span class="label">Accessories</span><span class="value">{{ product.accessories }}</span></div>
+            {% endif %}
+
+            {% if product.warranty|is_meaningful %}
+              <div class="detail-item"><span class="label">Warranty</span><span class="value">{{ product.warranty }}</span></div>
+            {% endif %}
+
+            {% if product.optional_details|is_meaningful %}
+              <div class="detail-item"><span class="label">Additional Details</span><span class="value">{{ product.optional_details }}</span></div>
+            {% endif %}
+
+            {% if product.available is not none %}
+              <div class="detail-item"><span class="label">Available</span>
+                <span class="value">{% if product.available %}Yes{% else %}No{% endif %}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <style>
+            .details-container {
+              background: #fff;
+              border: 1px solid #eee;
+              display: grid;
+              grid-template-columns: 150px 1fr; /* fixed labels, flexible values */
+              gap: 8px 16px;
+              font-size: 15px;
+            }
+
+            .detail-item {
+              display: contents; /* keeps grid layout neat */
+            }
+
+            .detail-item .label {
+              font-weight: 600;
+              color: #444;
+            }
+
+            .detail-item .value {
+              color: #222;
+            }
+
+            .description-box h5 {
+              font-size: 16px;
+              color: #333;
+            }
+
+            .description-box p {
+              font-size: 14px;
+              line-height: 1.5;
+            }
+
+          </style>
         </div>
       </div>
 
-      <!-- Middle: large main image -->
-      <div class="col-12 col-lg-6 text-center" style="padding-left:4px !important;">
-        <div class="product-image-main" style="min-height:600px; display:flex; align-items:center; justify-content:center; padding-left:4px !important;">
-          <img id="mainProductImage" src="{% static 'website/images/default-image.svg' %}" alt="Product image" class="img-fluid rounded shadow-sm" style="max-height:80vh; max-width:100%; width:100%; height:auto; object-fit:contain;">
+      <!-- Related products (same category) -->
+      <div class="row mt-5">
+        <div class="col-12 text-center">
+          <h4 class="fw-bold mb-4" style="color:#333;">✨ Related Products</h4>
+        </div>
+
+        <div class="col-12">
+          <div class="row g-4 related-products-grid">
+            {% for related in related_products %}
+              <div class="col-6 col-md-3">
+                <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden product-card">
+                  <a href="{% url 'product_detail' related.id %}" class="text-decoration-none d-block text-center p-3">
+                    {% if related.image %}
+                      <img src="{{ related.image.url }}" 
+                          class="img-fluid mx-auto d-block product-image" 
+                          alt="{{ related.name }}">
+                    {% else %}
+                      <img src="{% static 'website/images/default-image.svg' %}" 
+                          class="img-fluid mx-auto d-block product-image" 
+                          alt="No Image">
+                    {% endif %}
+
+                    <div class="card-body text-center mt-2 p-0">
+                      <h6 class="card-title text-dark fw-semibold mb-1">{{ related.name }}</h6>
+                      <p class="card-text fw-bold mb-0" style="color:#9150EC;">${{ related.price }}</p>
+                    </div>
+                  </a>
+                </div>
+              </div>
+            {% empty %}
+              <div class="col-12 text-center text-muted">No related products found.</div>
+            {% endfor %}
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Right: product details -->
-      <div class="col-12 col-lg-4" style="padding-left:20px !important; max-width:400px;">
-        <div class="mb-3 d-flex gap-2">
-          <a href="" class="btn btn-outline-secondary">
+    <div class="MobileViewPg">
+      <!-- Mobile Product Detail Page -->
+      <div class="MobileView d-lg-none px-3 py-4">
+        <!-- Back + Buy Buttons -->
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+          <a href="" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left-circle me-1"></i> Products
           </a>
-          <!-- Inline Buy Now: submit the same fields as product cards to addProduct_to_cart -->
-          <form method="POST" action="{% url 'addProduct_to_cart' %}" class="d-inline-block m-0 p-0" id="inlineBuyForm">
+          <form method="POST" action="{% url 'addProduct_to_cart' %}" id="inlineBuyFormMobile" class="d-inline-block m-0 p-0">
             {% csrf_token %}
-            <!-- Ensure hidden inputs always exist; JS will populate values when product loads -->
-            <input type="hidden" name="product_id" id="inline_product_id" value="{{ product.id|default:'' }}">
-            <input type="hidden" name="name" id="inline_name" value="{{ product.name|default:'' }}">
-            <input type="hidden" name="price" id="inline_price" value="{{ product.price|default:'' }}">
-            <input type="hidden" name="condition" id="inline_condition" value="{{ product.condition|default:'' }}">
-            <input type="hidden" name="category" id="inline_category" value="{{ product.category|default:'' }}">
-            <input type="hidden" name="image_url" id="inline_image_url" value="{% if product.image %}{{ product.image.name }}{% else %}{% static 'website/images/default-image.svg' %}{% endif %}">
-            <button type="submit" id="buyNowBtnInlineBtn" class="btn btn-primary" style="background-color:#9150EC; color: #fff;">
+            <input type="hidden" name="product_id" id="inline_product_id_mobile" value="{{ product.id|default:'' }}">
+            <input type="hidden" name="name" id="inline_name_mobile" value="{{ product.name|default:'' }}">
+            <input type="hidden" name="price" id="inline_price_mobile" value="{{ product.price|default:'' }}">
+            <input type="hidden" name="condition" id="inline_condition_mobile" value="{{ product.condition|default:'' }}">
+            <input type="hidden" name="category" id="inline_category_mobile" value="{{ product.category|default:'' }}">
+            <input type="hidden" name="image_url" id="inline_image_url_mobile" value="{% if product.image %}{{ product.image.name }}{% else %}{% static 'website/images/default-image.svg' %}{% endif %}">
+            <button type="submit" id="buyNowBtnInlineMobile" class="btn btn-primary btn-sm" style="background-color:#9150EC; color:#fff;">
               <i class="bi bi-cart-fill me-1"></i> Buy Now
             </button>
           </form>
         </div>
 
-        <h2 class="product-title mb-2">{{ product.name }}</h2>
-        <div class="product-price mb-3">${{ product.price }}</div>
+        <!-- Main Product Image -->
+        <div class="text-center mb-3">
+          <img id="mainProductImageMobile" 
+              src="{% static 'website/images/default-image.svg' %}" 
+              alt="Product image"
+              class="img-fluid rounded shadow-sm"
+              style="max-height:60vh; width:100%; object-fit:contain;">
+        </div>
+
+        <!-- Thumbnails -->
+        <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap product-thumbs-mobile">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Product Title + Price -->
+        <h4 class="fw-semibold mb-1 text-center">{{ product.name }}</h4>
+        <div class="product-price text-center mb-3 fw-bold" style="color:#9150EC;">
+          ${{ product.price }}
+        </div>
 
         <!-- Product Details -->
-        <div class="details-container p-3">
+        <div class="details-container-mobile p-3 rounded shadow-sm bg-white mb-4">
           {% if product.category|is_meaningful %}
             <div class="detail-item"><span class="label">Category</span><span class="value">{{ product.category }}</span></div>
           {% endif %}
-
           {% if product.condition|is_meaningful %}
             <div class="detail-item"><span class="label">Condition</span><span class="value">{{ product.condition }}</span></div>
           {% endif %}
-
           {% if product.brand_model|is_meaningful %}
             <div class="detail-item"><span class="label">Model</span><span class="value">{{ product.brand_model }}</span></div>
           {% elif product.brand|is_meaningful %}
             <div class="detail-item"><span class="label">Brand</span><span class="value">{{ product.brand }}</span></div>
           {% endif %}
-
           {% if product.stock|is_meaningful %}
             <div class="detail-item"><span class="label">Stock</span>
               <span class="value">
@@ -2464,135 +2902,76 @@
               </span>
             </div>
           {% endif %}
-
-          {% if product.location|is_meaningful %}
-            <div class="detail-item"><span class="label">Delivery</span>
-              <span class="value">{% if product.location == 'local' %}Tomorrow{% elif product.location == 'exotic' %}2 Weeks{% else %}Standard{% endif %}</span>
-            </div>
-          {% endif %}
-
           {% if product.color|is_meaningful %}
             <div class="detail-item"><span class="label">Color</span><span class="value">{{ product.color }}</span></div>
           {% endif %}
-
           {% if product.storage_ram|is_meaningful %}
             <div class="detail-item"><span class="label">Storage / RAM</span><span class="value">{{ product.storage_ram }}</span></div>
           {% endif %}
-
-          {% if product.network|is_meaningful %}
-            <div class="detail-item"><span class="label">Network</span><span class="value">{{ product.network }}</span></div>
-          {% endif %}
-
-          {% if product.battery|is_meaningful %}
-            <div class="detail-item"><span class="label">Battery</span><span class="value">{{ product.battery }}</span></div>
-          {% endif %}
-
-          {% if product.camera|is_meaningful %}
-            <div class="detail-item"><span class="label">Camera</span><span class="value">{{ product.camera }}</span></div>
-          {% endif %}
-
-          {% if product.screen|is_meaningful %}
-            <div class="detail-item"><span class="label">Screen</span><span class="value">{{ product.screen }}</span></div>
-          {% endif %}
-
           {% if product.processor|is_meaningful %}
             <div class="detail-item"><span class="label">Processor</span><span class="value">{{ product.processor }}</span></div>
           {% endif %}
-
-          {% if product.os|is_meaningful %}
-            <div class="detail-item"><span class="label">OS</span><span class="value">{{ product.os }}</span></div>
+          {% if product.battery|is_meaningful %}
+            <div class="detail-item"><span class="label">Battery</span><span class="value">{{ product.battery }}</span></div>
           {% endif %}
-
-          {% if product.accessories|is_meaningful %}
-            <div class="detail-item"><span class="label">Accessories</span><span class="value">{{ product.accessories }}</span></div>
-          {% endif %}
-
           {% if product.warranty|is_meaningful %}
             <div class="detail-item"><span class="label">Warranty</span><span class="value">{{ product.warranty }}</span></div>
           {% endif %}
-
-          {% if product.optional_details|is_meaningful %}
-            <div class="detail-item"><span class="label">Additional Details</span><span class="value">{{ product.optional_details }}</span></div>
-          {% endif %}
-
-          {% if product.available is not none %}
-            <div class="detail-item"><span class="label">Available</span>
-              <span class="value">{% if product.available %}Yes{% else %}No{% endif %}</span>
-            </div>
-          {% endif %}
         </div>
 
-        <style>
-          .details-container {
-            background: #fff;
-            border: 1px solid #eee;
-            display: grid;
-            grid-template-columns: 150px 1fr; /* fixed labels, flexible values */
-            gap: 8px 16px;
-            font-size: 15px;
-          }
-
-          .detail-item {
-            display: contents; /* keeps grid layout neat */
-          }
-
-          .detail-item .label {
-            font-weight: 600;
-            color: #444;
-          }
-
-          .detail-item .value {
-            color: #222;
-          }
-
-          .description-box h5 {
-            font-size: 16px;
-            color: #333;
-          }
-
-          .description-box p {
-            font-size: 14px;
-            line-height: 1.5;
-          }
-
-        </style>
-      </div>
-    </div>
-
-    <!-- Related products (same category) -->
-    <div class="row mt-5">
-      <div class="col-12 text-center">
-        <h4 class="fw-bold mb-4" style="color:#333;">✨ Related Products</h4>
-      </div>
-
-      <div class="col-12">
-        <div class="row g-4 related-products-grid">
-          {% for related in related_products %}
-            <div class="col-6 col-md-3">
-              <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden product-card">
-                <a href="{% url 'product_detail' related.id %}" class="text-decoration-none d-block text-center p-3">
-                  {% if related.image %}
-                    <img src="{{ related.image.url }}" 
-                        class="img-fluid mx-auto d-block product-image" 
-                        alt="{{ related.name }}">
-                  {% else %}
-                    <img src="{% static 'website/images/default-image.svg' %}" 
-                        class="img-fluid mx-auto d-block product-image" 
-                        alt="No Image">
-                  {% endif %}
-
-                  <div class="card-body text-center mt-2 p-0">
-                    <h6 class="card-title text-dark fw-semibold mb-1">{{ related.name }}</h6>
-                    <p class="card-text fw-bold mb-0" style="color:#9150EC;">${{ related.price }}</p>
-                  </div>
-                </a>
+        <!-- Related Products -->
+        <div class="related-products-mobile">
+          <h5 class="fw-bold text-center mb-3">✨ Related Products</h5>
+          <div class="row g-3">
+            {% for related in related_products %}
+              <div class="col-6">
+                <div class="card border-0 shadow-sm text-center">
+                  <a href="{% url 'product_detail' related.id %}" class="text-decoration-none">
+                    {% if related.image %}
+                      <img src="{{ related.image.url }}" class="img-fluid rounded-top" alt="{{ related.name }}">
+                    {% else %}
+                      <img src="{% static 'website/images/default-image.svg' %}" class="img-fluid rounded-top" alt="No Image">
+                    {% endif %}
+                    <div class="p-2">
+                      <div class="fw-semibold small">{{ related.name }}</div>
+                      <div class="fw-bold text-primary">${{ related.price }}</div>
+                    </div>
+                  </a>
+                </div>
               </div>
-            </div>
-          {% empty %}
-            <div class="col-12 text-center text-muted">No related products found.</div>
-          {% endfor %}
+            {% empty %}
+              <div class="col-12 text-center text-muted">No related products found.</div>
+            {% endfor %}
+          </div>
         </div>
       </div>
+
+      <style>
+        .details-container-mobile {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          font-size: 14px;
+        }
+
+        .detail-item {
+          display: flex;
+          justify-content: space-between;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 4px;
+        }
+
+        .detail-item .label {
+          font-weight: 600;
+          color: #555;
+        }
+
+        .detail-item .value {
+          color: #222;
+          text-align: right;
+        }
+      </style>
+
     </div>
 
     <style>

@@ -164,3 +164,37 @@ if USE_S3:
     except Exception as e:
         print(f"⚠️ S3 setup skipped: {e}")
         USE_S3 = False
+
+# Small logging filter to suppress noisy "Broken pipe" messages from the dev server
+class IgnoreBrokenPipeFilter:
+    def filter(self, record):
+        try:
+            msg = record.getMessage()
+        except Exception:
+            return True
+        # Some environments log a socket 'Broken pipe' when clients disconnect early.
+        # We don't want these to clutter the console in development.
+        if 'Broken pipe' in msg:
+            return False
+        return True
+
+# Provide a minimal LOGGING config if none is set, using the filter above.
+LOGGING = globals().get('LOGGING', {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'ignore_broken_pipe': {
+            '()': IgnoreBrokenPipeFilter,
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'filters': ['ignore_broken_pipe'],
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+})
