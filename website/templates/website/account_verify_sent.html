@@ -1,0 +1,8 @@
+{% extends 'website/base.html' %}
+{% block content %}
+<div class="container py-5 text-center">
+  <h3>Check your email</h3>
+  <p>We've sent a verification link to <strong>{{ email }}</strong>. Please follow the link to activate your account.</p>
+  <p>If you don't receive the email, check your spam folder or <a href="{% url 'account_resend_verification' %}">request a new one</a>.</p>
+</div>
+{% endblock %}

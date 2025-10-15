@@ -26,6 +26,143 @@ from .serializers import BundleSerializer
 from .models import Bundle
 
 from .forms import ProductForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django import forms
+from django.shortcuts import HttpResponse
+from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+
+
+# Simple account forms (kept minimal and safe)
+class RegisterForm(forms.Form):
+    email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+
+class LoginForm(forms.Form):
+    email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+
+def account_register(request):
+    """Create a new user account using email as the username field.
+
+    Behaviour: on POST, validate form, create User with username=email and set_password.
+    Redirects to LOGIN page after successful registration.
+    """
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email'].strip().lower()
+            password = form.cleaned_data['password']
+            if User.objects.filter(username=email).exists():
+                form.add_error('email', 'An account with this email already exists.')
+            else:
+                # create inactive user until email verification completes
+                user = User.objects.create_user(username=email, email=email)
+                user.set_password(password)
+                user.is_active = False
+                user.save()
+
+                # send verification email
+                try:
+                    uid = urlsafe_base64_encode(force_bytes(user.pk))
+                    token = default_token_generator.make_token(user)
+                    verify_path = reverse('account_verify', kwargs={'uidb64': uid, 'token': token})
+                    verify_url = request.build_absolute_uri(verify_path)
+
+                    subject = 'Verify your LionTech account'
+                    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@liontech.co.zw')
+                    context = {'verify_url': verify_url, 'user': user}
+                    message = render_to_string('website/account_verify_email.txt', context)
+                    html_message = render_to_string('website/account_verify_email.html', context)
+                    send_mail(subject, message, from_email, [email], html_message=html_message, fail_silently=True)
+                except Exception:
+                    # if sending fails, continue silently but user will not be able to verify via email
+                    pass
+
+                return render(request, 'website/account_verify_sent.html', {'email': email})
+    else:
+        form = RegisterForm()
+    return render(request, 'website/account_register.html', {'form': form})
+
+
+def account_login(request):
+    """Authenticate user by email (stored as username) and password."""
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email'].strip().lower()
+            password = form.cleaned_data['password']
+
+            # Check for existing user to provide helpful message if not verified
+            user_obj = User.objects.filter(username=email).first()
+            if user_obj and not user_obj.is_active:
+                form.add_error(None, 'Your email address is not verified. Please check your inbox for the verification link.')
+            else:
+                user = authenticate(request, username=email, password=password)
+                if user is not None:
+                    login(request, user)
+                    return redirect('home')
+                else:
+                    form.add_error(None, 'Invalid credentials')
+    else:
+        form = LoginForm()
+    return render(request, 'website/account_login.html', {'form': form})
+
+
+def account_logout(request):
+    logout(request)
+    return render(request, 'website/account_logged_out.html')
+
+
+def account_verify(request, uidb64, token):
+    """Verify an account using uidb64 and token from the verification email."""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except Exception:
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save()
+        return render(request, 'website/account_verify_confirm.html', {'user': user})
+    else:
+        return render(request, 'website/account_verify_failed.html')
+
+
+def account_resend_verification(request):
+    """Resend verification email to a provided email address (POST)."""
+    message = ''
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+        user = User.objects.filter(username=email).first()
+        if user and not user.is_active:
+            try:
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                verify_path = reverse('account_verify', kwargs={'uidb64': uid, 'token': token})
+                verify_url = request.build_absolute_uri(verify_path)
+                subject = 'Verify your LionTech account'
+                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@liontech.co.zw')
+                context = {'verify_url': verify_url, 'user': user}
+                message_txt = render_to_string('website/account_verify_email.txt', context)
+                html_message = render_to_string('website/account_verify_email.html', context)
+                send_mail(subject, message_txt, from_email, [email], html_message=html_message, fail_silently=True)
+                return render(request, 'website/account_resend_sent.html', {'email': email})
+            except Exception:
+                message = 'Failed to send verification email. Please try again later.'
+        else:
+            message = 'No account found for that email, or account already verified.'
+
+    return render(request, 'website/account_resend.html', {'message': message})
 
 logger = logging.getLogger(__name__)
 

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,11 +85,21 @@
         <span>LIONTECH</span>
       </a>
       <div class="d-flex gap-3">
-        <a href="{% url 'login' %}" class="nav-link"><i class="bi bi-person-circle me-1"></i>Log In</a>
-        <a href="{% url 'cart' %}" class="nav-link position-relative">
+        <a href="{% url 'account_login' %}" class="nav-link"><i class="bi bi-person-circle me-1"></i>Log In</a>
+        <a href="#" class="nav-link position-relative" id="header-open-cart">
           <i class="bi bi-bag"></i>
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count">0</span>
         </a>
+        <script>
+          // Open the cart section when header cart icon is clicked
+          document.addEventListener('DOMContentLoaded', function () {
+            var el = document.getElementById('header-open-cart');
+            if (el) el.addEventListener('click', function (e) {
+              e.preventDefault();
+              try { if (window.openSection) window.openSection('products_addto_cart'); } catch (err) { window.location.href = '/'; }
+            });
+          });
+        </script>
       </div>
     </div>
   </nav>

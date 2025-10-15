@@ -1,0 +1,12 @@
+Hello {{ user.username }},
+
+Thank you for registering at LionTech.
+
+Please verify your email address by visiting the link below:
+
+{{ verify_url }}
+
+If you didn't create an account with us, you can ignore this message.
+
+Thanks,
+LionTech Team

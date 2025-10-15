@@ -590,6 +590,9 @@ color: #9150EC;
   .deal-of-the-day {
     display: none;
   }
+  .QuickLinks {
+    display: none;
+  }
   .categoryMenu {
     margin-bottom: 40px;
   }

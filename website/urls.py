@@ -37,6 +37,13 @@ urlpatterns = [
     path('api/product/<int:pk>/', views.get_product_detail, name='api_product_detail'),
     path('orders/remove/', views.remove_order, name='remove_order'),
 
+    # Account management (simple email-as-username)
+    path('accounts/register/', views.account_register, name='account_register'),
+    path('accounts/login/', views.account_login, name='account_login'),
+    path('accounts/logout/', views.account_logout, name='account_logout'),
+    path('accounts/verify/<str:uidb64>/<str:token>/', views.account_verify, name='account_verify'),
+    path('accounts/resend-verification/', views.account_resend_verification, name='account_resend_verification'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

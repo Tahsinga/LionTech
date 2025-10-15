@@ -125,9 +125,11 @@
 
         <!-- Right Side Icons -->
         <div class="d-flex align-items-center nav-icons">
-          <a href="#" class="me-3 text-dark text-decoration-none">
-            <i class=" bi-person-circle fs-5"></i> 
-            <span class="d-none d-lg-inline">Log In</span>
+          <a href="{% url 'account_login' %}" class="me-3 text-decoration-none">
+            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill d-flex align-items-center gap-2" aria-label="Log in">
+              <i class="bi bi-box-arrow-in-right fs-5" aria-hidden="true"></i>
+              <span class="d-none d-lg-inline">Log In</span>
+            </button>
           </a>
 
           <!-- Cart Icon with Count and Modal Trigger -->
@@ -1019,6 +1021,48 @@
                       <img src="https://via.placeholder.com/120x120?text=No+Image" alt="No Image Available" class="clickable-image" data-product-id="{{ item.product_id }}" title="View product details">
                     {% endif %}
                   </div>
+
+                    <style>
+                      /* Ensure desktop cart images always render at expected size */
+                      .cart-container.desktop-cart .product-image-container { width:72px; height:72px; }
+                      .cart-container.desktop-cart .product-image-container img { width:72px !important; height:72px !important; object-fit:cover !important; display:block !important; }
+                    </style>
+
+                    <script>
+                      // Normalize cart images: if the src is a relative storage path like 'products/123.jpg'
+                      // prefix it with '/media/' so the browser can load it. Also ensure image sizing.
+                      document.addEventListener('DOMContentLoaded', function() {
+                        try {
+                          const imgs = document.querySelectorAll('.cart-container.desktop-cart .product-image-container img');
+                          imgs.forEach(img => {
+                            if (!img) return;
+                            const src = (img.getAttribute('src') || '').trim();
+                            if (!src) {
+                              // set placeholder if no src
+                              img.src = 'https://via.placeholder.com/72?text=No+Image';
+                              return;
+                            }
+
+                            // If src already looks like an absolute URL or starts with /static or /media, leave it
+                            if (/^(https?:)?\//i.test(src) || src.startsWith('data:')) {
+                              // ensure size
+                              img.style.width = '72px';
+                              img.style.height = '72px';
+                              img.style.objectFit = 'cover';
+                              return;
+                            }
+
+                            // Otherwise assume it's a storage-relative path and prefix with /media/
+                            img.src = '/media/' + src.replace(/^\//, '');
+                            img.style.width = '72px';
+                            img.style.height = '72px';
+                            img.style.objectFit = 'cover';
+                          });
+                        } catch (e) {
+                          console.warn('Cart image normalization failed', e);
+                        }
+                      });
+                    </script>
                   <div class="product-details">
                     <h3 class="product-title">{{ item.name }}</h3>
                     <div class="product-specs">
@@ -1129,42 +1173,6 @@
                     <option value="bulawayo suburbs">Bulawayo Suburbs</option>
                   </select>
                 </div>
-
-                <style>
-                  .summary-row-select-city {
-                      flex-direction: column; /* Stack label above select */
-                      margin-bottom: 15px;
-                  }
-
-                  .dropdown-label {
-                      margin-bottom: 5px; /* Space between label and dropdown */
-                      font-weight: 500;
-                      color: #232E3D;
-                      font-size: 14px;
-                  }
-
-                  .modern-select {
-                      padding: 10px 12px;
-                      border: 1px solid #ccc;
-                      border-radius: 8px;
-                      background-color: #fff;
-                      font-size: 14px;
-                      transition: all 0.3s ease;
-                      appearance: none; /* removes default arrow for some browsers */
-                      cursor: pointer;
-                  }
-
-                  .modern-select:hover {
-                      border-color: #49a09d;
-                      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                  }
-
-                  .modern-select:focus {
-                      border-color: #49a09d;
-                      box-shadow: 0 0 5px rgba(73, 160, 157, 0.5);
-                      outline: none;
-                  }
-                </style>
 
                 <div class="form-group">
                   <label for="address">Shipping Address</label><br>
@@ -1549,7 +1557,7 @@
   </script>
 
   <!--orderPlaced.html must work this code
-  this is the pag that shows the products purchused like not yrt delivered to the customer-->
+  this is the pag that shows the products purchased like not yrt delivered to the customer-->
   <div id="cartContents" class="order-history-section" style="display: none;">
     <div class="order-history-container">
       {% if orders %}
@@ -1618,9 +1626,9 @@
           <div class="order-product-image">
             {% if order.image %}
               {% if order.product_id %}
-                <img src="{{ order.image }}" alt="{{ order.product }}" class="clickable-image" data-product-id="{{ order.product_id }}" title="View product details">
+                <img src="{{ order.image.url }}" alt="{{ order.product }}" class="clickable-image" data-product-id="{{ order.product_id }}" title="View product details">
               {% else %}
-                <img src="{{ order.image }}" alt="{{ order.product }}">
+                <img src="{{ order.image.url }}" alt="{{ order.product }}">
               {% endif %}
             {% else %}
               {% if order.product_id %}
@@ -1782,9 +1790,9 @@
           <div class="order-product-image">
             {% if order.image %}
               {% if order.product_id %}
-                <img src="{{ order.image }}" alt="{{ order.product }}" class="clickable-image" data-product-id="{{ order.product_id }}" title="View product details">
+                <img src="{{ order.image.url }}" alt="{{ order.product }}" class="clickable-image" data-product-id="{{ order.product_id }}" title="View product details">
               {% else %}
-                <img src="{{ order.image }}" alt="{{ order.product }}">
+                <img src="{{ order.image.url }}" alt="{{ order.product }}">
               {% endif %}
             {% else %}
               {% if order.product_id %}
@@ -2840,11 +2848,12 @@
       <!-- Mobile Product Detail Page -->
       <div class="MobileView d-lg-none px-3 py-4">
         <!-- Back + Buy Buttons -->
-        <div class="mb-3 d-flex justify-content-between align-items-center">
-          <a href="" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left-circle me-1"></i> Products
+        <div class="mb-3 mobile-action-row d-flex gap-2 align-items-center">
+          <a href="javascript:void(0);" onclick="(function(){ try{ if(window.openSection){ window.openSection('promotion_page'); return; } }catch(e){} window.location.href='?page=1'; })()" class="mobile-action-btn btn-mobile-products text-center d-flex align-items-center justify-content-center">
+            <i class="bi bi-box-seam me-2"></i>
+            <span>Products</span>
           </a>
-          <form method="POST" action="{% url 'addProduct_to_cart' %}" id="inlineBuyFormMobile" class="d-inline-block m-0 p-0">
+          <form method="POST" action="{% url 'addProduct_to_cart' %}" id="inlineBuyFormMobile" class="d-inline-block m-0 p-0" style="flex:1;">
             {% csrf_token %}
             <input type="hidden" name="product_id" id="inline_product_id_mobile" value="{{ product.id|default:'' }}">
             <input type="hidden" name="name" id="inline_name_mobile" value="{{ product.name|default:'' }}">
@@ -2852,8 +2861,9 @@
             <input type="hidden" name="condition" id="inline_condition_mobile" value="{{ product.condition|default:'' }}">
             <input type="hidden" name="category" id="inline_category_mobile" value="{{ product.category|default:'' }}">
             <input type="hidden" name="image_url" id="inline_image_url_mobile" value="{% if product.image %}{{ product.image.name }}{% else %}{% static 'website/images/default-image.svg' %}{% endif %}">
-            <button type="submit" id="buyNowBtnInlineMobile" class="btn btn-primary btn-sm" style="background-color:#9150EC; color:#fff;">
-              <i class="bi bi-cart-fill me-1"></i> Buy Now
+            <button type="submit" id="buyNowBtnInlineMobile" class="mobile-action-btn btn-mobile-buy d-flex align-items-center justify-content-center" style="width:100%;">
+              <i class="bi bi-cart-fill me-2"></i>
+              <span>Buy Now</span>
             </button>
           </form>
         </div>
@@ -2914,6 +2924,27 @@
           {% if product.battery|is_meaningful %}
             <div class="detail-item"><span class="label">Battery</span><span class="value">{{ product.battery }}</span></div>
           {% endif %}
+          {% if product.camera|is_meaningful %}
+            <div class="detail-item"><span class="label">Camera</span><span class="value">{{ product.camera }}</span></div>
+          {% endif %}
+          {% if product.screen|is_meaningful %}
+            <div class="detail-item"><span class="label">Screen</span><span class="value">{{ product.screen }}</span></div>
+          {% endif %}
+          {% if product.network|is_meaningful %}
+            <div class="detail-item"><span class="label">Network</span><span class="value">{{ product.network }}</span></div>
+          {% endif %}
+          {% if product.accessories|is_meaningful %}
+            <div class="detail-item"><span class="label">Accessories</span><span class="value">{{ product.accessories }}</span></div>
+          {% endif %}
+          {% if product.optional_details|is_meaningful %}
+            <div class="detail-item"><span class="label">Details</span><span class="value">{{ product.optional_details }}</span></div>
+          {% endif %}
+          {% if product.available is not none %}
+            <div class="detail-item"><span class="label">Available</span><span class="value">{% if product.available %}Yes{% else %}No{% endif %}</span></div>
+          {% endif %}
+          {% if product.sku %}
+            <div class="detail-item"><span class="label">SKU</span><span class="value">{{ product.sku }}</span></div>
+          {% endif %}
           {% if product.warranty|is_meaningful %}
             <div class="detail-item"><span class="label">Warranty</span><span class="value">{{ product.warranty }}</span></div>
           {% endif %}
@@ -2971,6 +3002,40 @@
           text-align: right;
         }
       </style>
+      <style>
+        /* Mobile action buttons: modern, equal width, same height */
+        .mobile-action-row { width: 100%; }
+        .mobile-action-row .mobile-action-btn { flex: 1; min-height: 48px; padding: 10px 12px; border-radius: 12px; font-weight: 600; font-size: 15px; }
+        .mobile-action-row .mobile-action-btn i { font-size: 1.05rem; }
+
+        /* Products button: subtle light background */
+        .btn-mobile-products { background: #ffffff; border: 1px solid #e6e6f0; color: #222; box-shadow: 0 6px 18px rgba(14,13,38,0.05); }
+        .btn-mobile-products:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(14,13,38,0.08); }
+
+        /* Buy button: gradient accent */
+        .btn-mobile-buy { background: linear-gradient(90deg, #9150EC 0%, #5B2DD1 100%); color: #fff; border: none; box-shadow: 0 8px 28px rgba(145,80,236,0.18); }
+        .btn-mobile-buy:active, .btn-mobile-buy:focus, .btn-mobile-buy:hover { transform: translateY(-1px); box-shadow: 0 12px 36px rgba(91,45,209,0.18); }
+
+        /* Ensure text doesn't wrap weirdly and icons align */
+        .mobile-action-btn span { white-space: nowrap; display: inline-block; }
+
+        /* Make sure row stacks on very narrow screens while keeping equal widths when side-by-side */
+        @media (max-width: 360px) {
+          .mobile-action-row { flex-direction: column; }
+          .mobile-action-row .mobile-action-btn { width: 100%; }
+        }
+      </style>
+
+    <style>
+      /* Responsive toggles: MobileViewPg visible only on small screens, DesktopView only on large screens */
+      .MobileViewPg { display: none; }
+      .DesktopView { display: block; }
+
+      @media (max-width: 991px) {
+        .MobileViewPg { display: block; }
+        .DesktopView { display: none; }
+      }
+    </style>
 
     </div>
 
@@ -2998,8 +3063,8 @@
   <footer class="footer bg-white border-top py-5">
     <div class="container">
       <div class="row text-start gy-4">
-        <!-- Quick Links -->
-        <div class="col-md-4">
+        <!-- Quick Links (hidden on small screens) -->
+        <div class="col-md-4 QuickLinks d-none d-md-block">
           <h5 class="fw-semibold mb-3">Quick Links</h5>
           <ul class="list-unstyled footer-links">
             <li class="mb-2"><a href="{% url 'home' %}" class="text-dark text-decoration-none">Home</a></li>
@@ -3290,6 +3355,30 @@
               // Move container right after header so it appears above footer and at top
               if (header && container) header.parentNode.insertBefore(container, header.nextSibling);
 
+              // Ensure mobile view mirrors desktop content (if fragment returned only desktop markup)
+              try {
+                const mobileWrap = container.querySelector('.MobileViewPg');
+                if (mobileWrap) {
+                  // copy main image
+                  const desktopMain = container.querySelector('#mainProductImage');
+                  const mobileMain = mobileWrap.querySelector('#mainProductImageMobile');
+                  if (desktopMain && mobileMain) mobileMain.src = desktopMain.src;
+
+                  // copy thumbnails HTML (simple innerHTML copy is fine for a quick sync)
+                  const desktopThumbs = container.querySelector('.product-thumbs');
+                  const mobileThumbs = mobileWrap.querySelector('.product-thumbs-mobile');
+                  if (desktopThumbs && mobileThumbs) mobileThumbs.innerHTML = desktopThumbs.innerHTML;
+
+                  // copy title and price
+                  const desktopTitle = container.querySelector('.product-title');
+                  const mobileTitle = mobileWrap.querySelector('h4.fw-semibold');
+                  if (desktopTitle && mobileTitle) mobileTitle.textContent = desktopTitle.textContent;
+                  const desktopPrice = container.querySelector('.product-price');
+                  const mobilePrice = mobileWrap.querySelector('.product-price');
+                  if (desktopPrice && mobilePrice) mobilePrice.textContent = desktopPrice.textContent;
+                }
+              } catch (e) { console.warn('mobile fragment sync failed', e); }
+
               // ensure we have a close button
               if (!container.querySelector('.product-close-btn')) {
                 const close = document.createElement('button');
@@ -3356,30 +3445,6 @@
       });
     })();
   </script>
-  {% if show_product_container %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // When the server requests showing the product viewer, only show it if
-      // the `#product_details_page` already contains content. This avoids
-      // flashing an empty viewer if server toggled `show_product_container`.
-      const productDetails = document.getElementById('product_details_page');
-      const header = document.querySelector('.header-wrapper');
-      try {
-        const hasContent = productDetails && productDetails.innerHTML && productDetails.innerHTML.trim().length > 20;
-        if (productDetails && header && hasContent) {
-          header.parentNode.insertBefore(productDetails, header.nextSibling);
-          productDetails.style.display = 'block';
-          productDetails.classList.add('mt-3');
-          const headerHeight = header.offsetHeight || 0;
-          const top = productDetails.getBoundingClientRect().top + window.pageYOffset - headerHeight - 8;
-          window.scrollTo({ top, behavior: 'smooth' });
-        }
-      } catch (e) {}
-    });
-  </script>
-  {% endif %}
-  <!-- this script ensures that if the user is on a product detail page,
-      the main content area is visible.-->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const promotionPage = document.getElementById('promotion_page');

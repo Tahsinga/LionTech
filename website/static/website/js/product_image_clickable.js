@@ -230,6 +230,89 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => { if (submitBtn) submitBtn.disabled = false; }, 30);
       }
     } catch (e) { console.warn('inline form population failed', e); }
+
+    // --- Mobile view sync -------------------------------------------------
+    try {
+      // main mobile image
+      const mobileMain = container.querySelector('#mainProductImageMobile');
+      const mobileThumbsWrap = container.querySelector('.product-thumbs-mobile');
+      const mobileTitle = container.querySelector('.MobileViewPg h4.fw-semibold');
+      const mobilePrice = container.querySelector('.MobileViewPg .product-price');
+      const mobileDetailsWrap = container.querySelector('.details-container-mobile');
+
+      // helper to get image url
+      function imgUrl(val) {
+        if (!val) return '';
+        if (typeof val === 'string') return val;
+        if (val && typeof val === 'object' && val.url) return val.url;
+        return '';
+      }
+
+      const mainSrc = imgUrl(product.image) || '';
+      if (mobileMain && mainSrc) mobileMain.src = mainSrc;
+
+      if (mobileThumbsWrap) {
+        mobileThumbsWrap.innerHTML = '';
+        const thumbs = [imgUrl(product.image_2), imgUrl(product.image_3), imgUrl(product.image_4)].filter(Boolean);
+        thumbs.forEach(src => {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = product.name || 'thumb';
+          img.className = 'img-fluid rounded mobile-thumbnail';
+          img.style.cssText = 'max-height:80px; object-fit:contain; cursor:pointer;';
+          img.addEventListener('click', () => { if (mobileMain) mobileMain.src = src; });
+          mobileThumbsWrap.appendChild(img);
+        });
+      }
+
+      if (mobileTitle) mobileTitle.textContent = product.name || '';
+      if (mobilePrice) mobilePrice.textContent = product.price ? `$${product.price}` : '';
+
+      if (mobileDetailsWrap) {
+        // Build a compact details list for mobile (only meaningful fields)
+        const rows = [];
+        const push = (label, value) => {
+          if (!value) return;
+          rows.push(`<div class="detail-item"><span class="label">${label}</span><span class="value">${value}</span></div>`);
+        };
+
+        push('Category', product.category);
+        push('Condition', product.condition);
+        push('Brand/Model', product.brand || product.brand_model);
+        if (product.stock !== undefined) push('Stock', (Number(product.stock) === 0 ? 'Out of stock' : `${product.stock} available`));
+        push('Color', product.color);
+        push('Storage / RAM', product.storage_ram);
+        push('Processor', product.processor);
+        push('Battery', product.battery);
+        push('Camera', product.camera);
+        push('Screen', product.screen);
+        push('Network', product.network);
+        push('Accessories', product.accessories);
+        push('Warranty', product.warranty);
+        push('Details', product.optional_details);
+        push('Available', product.available !== undefined ? (product.available ? 'Yes' : 'No') : '');
+
+        mobileDetailsWrap.innerHTML = rows.join('');
+      }
+
+      // populate mobile inline form hidden inputs if present
+      try {
+        const setMobileHidden = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.value = (value !== undefined && value !== null) ? String(value) : '';
+        };
+        setMobileHidden('inline_product_id_mobile', product.id || '');
+        setMobileHidden('inline_name_mobile', product.name || '');
+        setMobileHidden('inline_price_mobile', (product.price !== undefined && product.price !== null) ? product.price : '');
+        setMobileHidden('inline_condition_mobile', product.condition || '');
+        setMobileHidden('inline_category_mobile', product.category || '');
+        const mobileImgUrl = imgUrl(product.image) || '/static/website/images/default-image.svg';
+        setMobileHidden('inline_image_url_mobile', mobileImgUrl);
+      } catch (e) { /* ignore mobile form failures */ }
+    } catch (e) {
+      // non-critical: mobile sync failed
+      console.warn('Mobile view sync failed', e);
+    }
   }
 
   // Show container below header
