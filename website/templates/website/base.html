@@ -105,6 +105,32 @@
   </nav>
 </div>
 
+  <!-- Sign-in motivation modal (shows for anonymous visitors, non-annoying) -->
+  <div class="modal fade" id="signinPromptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-body p-4 text-center">
+          <div class="mb-3">
+            <img src="{% static 'website/images/lionetech_logo.png' %}" alt="LionTech" style="width:64px;height:64px;border-radius:12px;object-fit:cover;">
+          </div>
+          <h5 class="fw-bold mb-2">Welcome to LionTech</h5>
+          <p class="text-muted mb-3">Sign in for a faster checkout, order tracking, and exclusive offers.</p>
+
+          <div class="d-flex gap-2 justify-content-center mb-3">
+            <a href="{% url 'account_register' %}" class="btn btn-outline-primary rounded-pill px-4">Create account</a>
+            <a href="{% url 'account_login' %}" class="btn btn-primary rounded-pill px-4" style="background: linear-gradient(90deg,#9150EC,#5B2DD1); border: none;">Sign in</a>
+          </div>
+
+          <div class="small text-muted">Or continue browsing — we won't ask again for a while.</div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between p-2">
+          <button type="button" class="btn btn-sm btn-link text-muted" id="dontShowBtn">Don't show again</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <!-- Main Content -->
 <main class="container py-4">
   {% block content %}
@@ -163,5 +189,46 @@
 
 <!-- Bootstrap Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function(){
+    // Rendered as 'True' or 'False' by Django; compare as string to avoid JS syntax issues
+    var isAuthenticated = "{{ request.user.is_authenticated }}" === "True";
+    if (isAuthenticated) return; // don't prompt signed-in users
+
+    try {
+      var dismissed = localStorage.getItem('signin_prompt_dismissed');
+      if (dismissed === 'yes') return; // user opted out
+    } catch (e) { /* ignore localStorage errors */ }
+
+    // Delay the modal show to avoid interrupting early navigation
+    var showDelay = 7000; // ms
+    var modalEl = document.getElementById('signinPromptModal');
+    if (!modalEl) return;
+    var bsModal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+
+    var timer = setTimeout(function(){
+      bsModal.show();
+    }, showDelay);
+
+    // If user clicks 'Don't show again', persist choice and hide
+    var dontBtn = document.getElementById('dontShowBtn');
+    if (dontBtn) {
+      dontBtn.addEventListener('click', function(){
+        try { localStorage.setItem('signin_prompt_dismissed', 'yes'); } catch(e){}
+        bsModal.hide();
+      });
+    }
+
+    // If modal is dismissed via Close, set a shorter suppression to avoid immediate re-prompt on navigation
+    modalEl.addEventListener('hidden.bs.modal', function(){
+      try { localStorage.setItem('signin_prompt_dismissed', 'temp'); } catch(e){}
+      // expire the temporary flag after 6 hours
+      try {
+        setTimeout(function(){ if (localStorage.getItem('signin_prompt_dismissed') === 'temp') localStorage.removeItem('signin_prompt_dismissed'); }, 6 * 60 * 60 * 1000);
+      } catch(e){}
+    });
+  })();
+</script>
 </body>
 </html>
+
