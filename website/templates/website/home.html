@@ -94,6 +94,93 @@
       }
     </style>
 <body>
+  <!-- Mobile Navbar -->
+  <div class="container mobile-navbar py-3 text-center" style="display: none;">
+    <!-- Logo and Brand Name -->
+    <a class="navbar-brand d-flex flex-column align-items-center text-decoration-none mb-3" href="#">
+      <img src="{% static 'website/images/lionetech_logo.png' %}" 
+          alt="LionTech Logo"
+          style="height: 70px; width: 70px; border-radius: 50%; object-fit: cover; background-color: white;">
+      <span style="
+        font-size: 28px; 
+        font-weight: 700; 
+        letter-spacing: 1px;
+        background: linear-gradient(90deg, #01f0fa, #1e129e);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+      ">
+        LIONTECH
+      </span>
+    </a>
+
+    <!-- Search Bar -->
+    <form class="d-flex flex-column align-items-center mb-3" method="get" action="." style="width: 100%;">
+      <input class="form-control mb-2" id="liveSearchInputMobile" name="search" 
+        type="search" value="{{ current_search }}" 
+        placeholder="Search Liontech.co.zw" autocomplete="off" 
+        style="width: 90%; border-radius: 50px; text-align: center;">
+      <input type="hidden" name="filter" value="{{ current_filter }}">
+    </form>
+
+    <!-- Buttons and Icons -->
+    <div class="d-flex flex-column align-items-center gap-2">
+      <!-- Log In -->
+      <a href="{% url 'account_login' %}" class="text-decoration-none" style="width: 90%;">
+        <button type="button" class="btn btn-outline-primary w-100 rounded-pill d-flex justify-content-center align-items-center gap-2">
+          <i class="bi bi-box-arrow-in-right fs-5"></i>
+          <span>Log In</span>
+        </button>
+      </a>
+
+      <!-- Cart -->
+      <a href="#" id="cartIconMobile" class="text-dark text-decoration-none position-relative" style="width: 90%;">
+        <button class="btn btn-outline-secondary w-100 rounded-pill d-flex justify-content-center align-items-center gap-2 position-relative">
+          <i class="bi bi-bag fs-5"></i>
+          <span>Your Cart</span>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count-mobile">0</span>
+        </button>
+      </a>
+
+      <!-- Orders -->
+      <div id="toggleViewBtnMobile" style="width: 90%;">
+        <button class="btn w-100 rounded-pill d-flex justify-content-center align-items-center gap-2" 
+                type="button" style="background: #9150ec; color: white;">
+          <i class="bi bi-cart-plus me-1"></i> 
+          <span>Your Orders</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- JS Data Handling -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        try {
+          window.serverFilterInit = {
+            currentSearch: '{{ current_search|default:"" }}'.trim(),
+            currentFilter: '{{ current_filter|default:"" }}'.trim()
+          };
+        } catch (e) {}
+      });
+    </script>
+  </div>
+
+  <!-- Responsive Styling for mobile navbar and header visibility -->
+  <style>
+  @media (min-width: 769px) {
+    .mobile-navbar { display: none !important; }
+    .header-wrapper { display: block !important; }
+  }
+
+  @media (max-width: 768px) {
+    .mobile-navbar { display: block !important; }
+    /* hide the existing header-wrapper on small screens to avoid duplication */
+    .header-wrapper { display: none !important; }
+    /* sync cart badge ids if needed */
+    #cart-count-mobile { display: inline-block; }
+  }
+  </style>
   <!-- Header -->
   <div class="header-wrapper">
     <nav class="navbar navbar-expand-lg py-0">
@@ -163,36 +250,38 @@
       </div>
     </nav>
 
-    <!-- Category Menu -->
-    <div id="categoryMenu" class="bg-light py-2 border-top">
-      <div id="cartSection" class="container mt-4 d-none">
-        <!-- Cart content will load here -->
-      </div>
+    </nav>
+  </div>
 
-      <div class="container">
-        <div class="d-flex justify-content-center flex-wrap gap-1">
-          <button id="load_home_contents" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-            Home
-          </button>
-          <button id="load_product_list" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-            Products
-          </button>          
-          <button id="load_my_cart" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
-            Cart
-          </button> 
-          <button id="load_accounts" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-            Accounts
-          </button> 
-          <button id="load_testimony" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-            Customer Reviews
-          </button> 
-          <button id="load_history" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
-            Orders
-          </button> 
-          <button id="load_about_us" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-            About us
-          </button> 
-        </div>
+  <!-- Category Menu (moved outside header-wrapper so it's visible under mobile navbar) -->
+  <div id="categoryMenu" class="bg-light py-2 border-top">
+    <div id="cartSection" class="container mt-4 d-none">
+      <!-- Cart content will load here -->
+    </div>
+
+    <div class="container">
+      <div class="d-flex justify-content-center flex-wrap gap-1">
+        <button id="load_home_contents" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+          Home
+        </button>
+        <button id="load_product_list" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+          Products
+        </button>          
+        <button id="load_my_cart" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
+          Cart
+        </button> 
+        <button id="load_accounts" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+          Accounts
+        </button> 
+        <button id="load_testimony" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+          Customer Reviews
+        </button> 
+        <button id="load_history" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
+          Orders
+        </button> 
+        <button id="load_about_us" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+          About us
+        </button> 
       </div>
     </div>
   </div>
