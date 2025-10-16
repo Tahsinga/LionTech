@@ -21,13 +21,32 @@ function showSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (section) {
         section.style.display = 'block';
-        // scroll the page so the opened section sits just below the header
+        // scroll the page so the opened section sits just below the header + category menu
         // use a small timeout so layout settles (helps when elements are inserted/moved)
         setTimeout(() => {
-            const header = document.querySelector('.header-wrapper');
-            const headerHeight = header ? header.offsetHeight : 0;
+            // Compute visible header height (desktop header or mobile navbar)
+            let headerHeight = 0;
+            const desktopHeader = document.querySelector('.header-wrapper');
+            const mobileHeader = document.querySelector('.mobile-navbar');
+            try {
+                if (desktopHeader && window.getComputedStyle(desktopHeader).display !== 'none') {
+                    headerHeight = desktopHeader.offsetHeight;
+                } else if (mobileHeader && window.getComputedStyle(mobileHeader).display !== 'none') {
+                    headerHeight = mobileHeader.offsetHeight;
+                }
+            } catch (e) { /* ignore */ }
+
+            // Account for category menu height if present and not hidden
+            let categoryHeight = 0;
+            const cat = document.getElementById('categoryMenu');
+            try {
+                if (cat && window.getComputedStyle(cat).display !== 'none') {
+                    categoryHeight = cat.offsetHeight;
+                }
+            } catch (e) {}
+
             const rect = section.getBoundingClientRect();
-            const top = rect.top + window.pageYOffset - headerHeight - 8; // small offset
+            const top = rect.top + window.pageYOffset - headerHeight - categoryHeight - 8; // small offset
             window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
         }, 50);
     }
@@ -85,6 +104,36 @@ document.getElementById('load_about_us').addEventListener('click', function(e) {
     showSection('about_us_page');
 });
 
+// Mirror desktop handlers for mobile-specific controls (if present)
+try {
+    const cartMobile = document.getElementById('cartIconMobile');
+    if (cartMobile) {
+        cartMobile.addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('products_addto_cart');
+        });
+    }
+
+    const toggleMobile = document.getElementById('toggleViewBtnMobile');
+    if (toggleMobile) {
+        toggleMobile.addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('HistoryContents');
+        });
+    }
+
+    // Some mobile layouts may reuse the same id for load_my_cart; ensure it works
+    const loadMyCartMobile = document.getElementById('load_my_cart') || document.getElementById('load_my_cart_mobile');
+    if (loadMyCartMobile) {
+        loadMyCartMobile.addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('products_addto_cart');
+        });
+    }
+} catch (e) {
+    // If DOM isn't ready or elements are missing, fail silently
+}
+
 // On page load, start at homeContent
 window.addEventListener('load', function() {
     // If the URL contains product detail path, keep products visible
@@ -97,3 +146,29 @@ window.addEventListener('load', function() {
         showSection('homeContent');
     }
 });
+
+// Keep category menu visually fixed below the active header by adjusting its top value.
+function adjustCategoryMenu() {
+    const cat = document.getElementById('categoryMenu');
+    if (!cat) return;
+
+    let headerHeight = 0;
+    const desktopHeader = document.querySelector('.header-wrapper');
+    const mobileHeader = document.querySelector('.mobile-navbar');
+    try {
+        if (desktopHeader && window.getComputedStyle(desktopHeader).display !== 'none') {
+            headerHeight = desktopHeader.offsetHeight;
+        } else if (mobileHeader && window.getComputedStyle(mobileHeader).display !== 'none') {
+            headerHeight = mobileHeader.offsetHeight;
+        }
+    } catch (e) { /* ignore */ }
+
+    // Set sticky positioning and top so it stays visible beneath header
+    cat.style.position = 'sticky';
+    cat.style.top = headerHeight + 'px';
+    cat.style.zIndex = '900';
+}
+
+// Adjust on load and resize
+document.addEventListener('DOMContentLoaded', adjustCategoryMenu);
+window.addEventListener('resize', adjustCategoryMenu);

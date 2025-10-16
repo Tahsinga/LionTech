@@ -123,6 +123,13 @@ body {
   margin-bottom: 40px;
 }
 
+/* Make the category menu sticky under the header so it remains visible when navigating */
+#categoryMenu {
+  position: sticky;
+  top: 70px; /* default; JS will adjust exact top on load/resize */
+  z-index: 900;
+}
+
 #categoryMenu .nav-link {
   color: var(--dark) !important;
   font-weight: 500;

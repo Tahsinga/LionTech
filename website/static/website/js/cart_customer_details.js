@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const buttons = document.querySelectorAll('.add-to-cart-btn');
     const cartCountSpan = document.getElementById('cart-count');
+    const cartCountMobileSpan = document.getElementById('cart-count-mobile');
     const addToCartModal = new bootstrap.Modal(document.getElementById('addToCartModal'));
     
     // Cart functionality
@@ -20,7 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updateCartCount() {
         const count = cart.reduce((total, item) => total + item.quantity, 0);
-        cartCountSpan.textContent = count;
+        if (cartCountSpan) {
+            cartCountSpan.textContent = count;
+            cartCountSpan.style.display = count && count > 0 ? 'inline-block' : 'none';
+        }
+        if (cartCountMobileSpan) {
+            cartCountMobileSpan.textContent = count;
+            cartCountMobileSpan.style.display = count && count > 0 ? 'inline-block' : 'none';
+        }
         localStorage.setItem('cart', JSON.stringify(cart));
     }
     

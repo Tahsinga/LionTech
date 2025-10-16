@@ -1328,7 +1328,7 @@
         quantity--;
       }
 
-      // Send update to backend
+      // Send update to backend (robust handling for non-JSON or empty responses)
       fetch('/update-cart-quantity/', {
         method: 'POST',
         headers: {
@@ -1337,23 +1337,46 @@
         },
         body: `product_id=${productId}&quantity=${quantity}`
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          quantityElement.textContent = quantity;
-          // Update item total price
-          const itemCard = button.closest('.cart-item-card');
-          const itemTotal = itemCard.querySelector('.item-total');
-          itemTotal.textContent = data.item_total;
-          // Update cart summary totals
-          document.querySelector('.subtotal-amount').textContent = data.subtotal;
-          document.querySelector('.tax-amount').textContent = data.taxes;
-          document.querySelector('.total-amount').textContent = data.total;
+      .then(response => {
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!response.ok) {
+          // Try to parse an error message if JSON, otherwise surface text
+          if (contentType.includes('application/json')) {
+            return response.json().then(err => Promise.reject(err));
+          }
+          return response.text().then(t => Promise.reject({ error: t || 'Server error' }));
+        }
+        // OK response: if JSON, parse it, otherwise return marker that it was successful but non-JSON
+        if (contentType.includes('application/json')) {
+          return response.json().then(data => ({ parsed: true, data }));
+        }
+        return { parsed: false };
+      })
+      .then(result => {
+        if (result && result.parsed) {
+          const data = result.data || {};
+          if (data.success) {
+            quantityElement.textContent = quantity;
+            // Update item total price if provided
+            const itemCard = button.closest('.cart-item-card');
+            const itemTotal = itemCard && itemCard.querySelector('.item-total');
+            if (itemTotal && data.item_total !== undefined) itemTotal.textContent = data.item_total;
+            if (document.querySelector('.subtotal-amount') && data.subtotal !== undefined) document.querySelector('.subtotal-amount').textContent = data.subtotal;
+            if (document.querySelector('.tax-amount') && data.taxes !== undefined) document.querySelector('.tax-amount').textContent = data.taxes;
+            if (document.querySelectorAll('.total-amount') && data.total !== undefined) document.querySelectorAll('.total-amount').forEach(el => el.textContent = data.total);
+          } else {
+            alert('Failed to update cart: ' + (data.error || 'Unknown error'));
+          }
         } else {
-          alert('Failed to update cart: ' + data.error);
+          // Non-JSON but successful response (e.g. 204 or plain text). Refresh cart to reflect server state.
+          quantityElement.textContent = quantity;
+          try { fetchCartData(); } catch (e) { /* best-effort */ }
         }
       })
-      .catch(() => alert('Failed to update cart. Please try again.'));
+      .catch(err => {
+        console.error('update-cart-quantity error', err);
+        alert('Failed to update cart. Please try again.');
+      });
     });
   });
 
@@ -1452,9 +1475,15 @@
       // Update header cart count badge in real time
       try {
         const cartBadge = document.getElementById('cart-count');
+        const cartBadgeMobile = document.getElementById('cart-count-mobile');
+        const count = data.total_items || 0;
         if (cartBadge) {
-          cartBadge.textContent = data.total_items || 0;
-          cartBadge.style.display = data.total_items && data.total_items > 0 ? 'inline-block' : 'none';
+          cartBadge.textContent = count;
+          cartBadge.style.display = count && count > 0 ? 'inline-block' : 'none';
+        }
+        if (cartBadgeMobile) {
+          cartBadgeMobile.textContent = count;
+          cartBadgeMobile.style.display = count && count > 0 ? 'inline-block' : 'none';
         }
       } catch (e) { /* ignore if element not present */ }
 
@@ -1564,15 +1593,32 @@
         },
         body: `product_id=${productId}&quantity=${quantity}`
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          fetchCartData(); // refresh cart with updated data
+      .then(res => {
+        const contentType = (res.headers.get('content-type') || '').toLowerCase();
+        if (!res.ok) {
+          if (contentType.includes('application/json')) return res.json().then(err => Promise.reject(err));
+          return res.text().then(t => Promise.reject({ error: t || 'Server error' }));
+        }
+        if (contentType.includes('application/json')) return res.json().then(data => ({ parsed: true, data }));
+        return { parsed: false };
+      })
+      .then(result => {
+        if (result && result.parsed) {
+          const data = result.data || {};
+          if (data.success) {
+            fetchCartData();
+          } else {
+            alert('Failed to update cart: ' + (data.error || 'Unknown error'));
+          }
         } else {
-          alert('Failed to update cart: ' + data.error);
+          // Non-JSON success — refresh cart anyway
+          fetchCartData();
         }
       })
-      .catch(() => alert('Failed to update cart. Please try again.'));
+      .catch(err => {
+        console.error('updateQuantity error', err);
+        alert('Failed to update cart. Please try again.');
+      });
     }
 
     // Attach event listeners to quantity buttons

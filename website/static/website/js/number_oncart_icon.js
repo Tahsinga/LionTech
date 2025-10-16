@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const buttons = document.querySelectorAll('.add-to-cart-btn');
     const cartCountSpan = document.getElementById('cart-count');
+    const cartCountMobileSpan = document.getElementById('cart-count-mobile');
 
     function showTemporaryMessage(message) {
         const msg = document.createElement('div');
@@ -37,7 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // ✅ Update cart count visually
             if (data.cart_count !== undefined) {
-                cartCountSpan.textContent = data.cart_count;
+                if (cartCountSpan) {
+                    cartCountSpan.textContent = data.cart_count;
+                    cartCountSpan.style.display = data.cart_count && data.cart_count > 0 ? 'inline-block' : 'none';
+                }
+                if (cartCountMobileSpan) {
+                    cartCountMobileSpan.textContent = data.cart_count;
+                    cartCountMobileSpan.style.display = data.cart_count && data.cart_count > 0 ? 'inline-block' : 'none';
+                }
             }
             } else {
             showTemporaryMessage("❌ Error: " + data.message);

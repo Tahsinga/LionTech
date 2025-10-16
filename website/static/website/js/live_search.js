@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   const searchInput = document.getElementById('liveSearchInput');
+  const searchInputMobile = document.getElementById('liveSearchInputMobile');
   const productList = document.getElementById('productList');
   const paginationNav = document.getElementById('productPagination');
   const liveProducts = {}; // keep rendered products by id for actions (add to cart)
@@ -54,28 +55,41 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
   }
 
-  searchInput.addEventListener('input', function () {
-    const query = this.value.trim();
+  // Unified handler for live search input (desktop + mobile)
+  let searchDebounceTimer = null;
+  function handleLiveSearchInput(e) {
+    const query = (e.target.value || '').trim();
 
-    fetch(`/live-search-products/?search=${encodeURIComponent(query)}`)
-      .then(response => response.json())
-      .then(data => {
-  productList.innerHTML = '';
-  // when performing live search, hide server pagination
-  if (paginationNav) paginationNav.style.display = 'none';
+    // Ensure product view is shown when user starts typing
+    if (typeof showSection === 'function') showSection('promotion_page');
 
-        if (data.length === 0) {
-          productList.innerHTML = '<p>No products found.</p>';
-          return;
-        }
+    // debounce requests to reduce load
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      fetch(`/live-search-products/?search=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          productList.innerHTML = '';
+          // when performing live search, hide server pagination
+          if (paginationNav) paginationNav.style.display = 'none';
 
-        data.forEach(product => {
-          const pid = product.id || product.pk || '';
-          liveProducts[pid] = product;
-          productList.innerHTML += buildProductCard(product);
-        });
-      });
-  });
+          if (!data || data.length === 0) {
+            productList.innerHTML = '<p>No products found.</p>';
+            return;
+          }
+
+          data.forEach(product => {
+            const pid = product.id || product.pk || '';
+            liveProducts[pid] = product;
+            productList.innerHTML += buildProductCard(product);
+          });
+        })
+        .catch(err => console.error('Live search error', err));
+    }, 200);
+  }
+
+  if (searchInput) searchInput.addEventListener('input', handleLiveSearchInput);
+  if (searchInputMobile) searchInputMobile.addEventListener('input', handleLiveSearchInput);
 
   // Handle category clicks with AJAX (no page reload). Bind both explicit ajax-category
   // buttons and standard category-link anchors rendered in the sidebar.
@@ -168,13 +182,20 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
+        if (data.success) {
         // update cart badge if provided
         try {
           const badge = document.getElementById('cart-count');
-          if (badge && data.cart_count !== undefined) {
-            badge.textContent = data.cart_count;
-            badge.style.display = data.cart_count && data.cart_count > 0 ? 'inline-block' : 'none';
+          const badgeMobile = document.getElementById('cart-count-mobile');
+          if (data.cart_count !== undefined) {
+            if (badge) {
+              badge.textContent = data.cart_count;
+              badge.style.display = data.cart_count && data.cart_count > 0 ? 'inline-block' : 'none';
+            }
+            if (badgeMobile) {
+              badgeMobile.textContent = data.cart_count;
+              badgeMobile.style.display = data.cart_count && data.cart_count > 0 ? 'inline-block' : 'none';
+            }
           }
         } catch (e) {}
       } else {
