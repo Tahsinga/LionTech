@@ -94,6 +94,104 @@
       }
     </style>
 <body>
+  <script>
+    // Prevent automatic scroll restoration and ensure mobile view scrolls to the
+    // start of the header area (.header-wrapper). We try synchronously first
+    // (to beat bfcache/restore), then retry multiple times with small and
+    // longer delays, listen to pageshow/load, and use a short-lived
+    // MutationObserver/focusin handler to re-apply the scroll if late DOM
+    // changes shift the viewport. While the page is stabilizing we temporarily
+    // hide the category menu on mobile to avoid landing on it.
+    (function() {
+      var retryDelaysShort = [25, 75, 150];
+      var retryDelaysLong = [300, 600, 1200];
+
+      function scrollToHeaderInstant() {
+        try {
+          var mw = window.innerWidth;
+          if (mw <= 768) {
+            var header = document.querySelector('.header-wrapper');
+            if (!header) {
+              window.scrollTo(0, 0);
+              return;
+            }
+            var navbar = document.querySelector('.mobile-navbar');
+            var navbarHeight = 0;
+            if (navbar && getComputedStyle(navbar).display !== 'none') {
+              navbarHeight = navbar.getBoundingClientRect().height || 0;
+            }
+            var rect = header.getBoundingClientRect();
+            var targetY = window.scrollY + rect.top - navbarHeight;
+            if (targetY < 0) targetY = 0;
+            // Only perform the scroll if we're not already at the target (small tolerance)
+            if (Math.abs(window.scrollY - targetY) > 2) {
+              window.scrollTo({ top: targetY, left: 0, behavior: 'auto' });
+            }
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      // Create a short-lived CSS rule to hide the category menu while we run
+      // the stabilization/scroll attempts (mobile only).
+      var hideStyle;
+      try {
+        hideStyle = document.createElement('style');
+        hideStyle.type = 'text/css';
+        hideStyle.appendChild(document.createTextNode('.lt-hide-until-ready{visibility:hidden !important;}'));
+        (document.head || document.documentElement).appendChild(hideStyle);
+      } catch (e) { hideStyle = null; }
+
+      var catMenuEl = null;
+      function hideCategoryMenuIfMobile() {
+        try {
+          if (window.innerWidth <= 768) {
+            catMenuEl = document.getElementById('categoryMenu');
+            if (catMenuEl) catMenuEl.classList.add('lt-hide-until-ready');
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      function unhideCategoryMenu() {
+        try {
+          if (catMenuEl) catMenuEl.classList.remove('lt-hide-until-ready');
+          if (hideStyle && hideStyle.parentNode) hideStyle.parentNode.removeChild(hideStyle);
+        } catch (e) { /* ignore */ }
+      }
+
+      // Best-effort: stop the browser from restoring scroll position
+      try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch(e) {}
+
+      // Hide category menu immediately on mobile, then attempt the header scroll
+      hideCategoryMenuIfMobile();
+      // Immediate attempts
+      scrollToHeaderInstant();
+      retryDelaysShort.forEach(function(d) { setTimeout(scrollToHeaderInstant, d); });
+      retryDelaysLong.forEach(function(d) { setTimeout(scrollToHeaderInstant, d); });
+      // Schedule unhide a little after longest retry (best-effort)
+      setTimeout(unhideCategoryMenu, 1400);
+
+      // Re-run on DOMContentLoaded, load (images/fonts may shift layout), and pageshow
+      document.addEventListener('DOMContentLoaded', function() { scrollToHeaderInstant(); });
+      window.addEventListener('load', function() { scrollToHeaderInstant(); unhideCategoryMenu(); });
+      window.addEventListener('pageshow', function(e) { scrollToHeaderInstant(); unhideCategoryMenu(); });
+
+      // Observe DOM changes for a short time and re-apply the scroll if something shifts the page
+      try {
+        var mo = new MutationObserver(function(muts) {
+          // schedule a quick re-check
+          setTimeout(scrollToHeaderInstant, 10);
+        });
+        mo.observe(document.documentElement || document.body, { childList: true, subtree: true, attributes: true });
+        // Stop observing after 2 seconds to avoid overhead
+        setTimeout(function() { try { mo.disconnect(); } catch (e) {} }, 2000);
+      } catch (e) { /* ignore */ }
+
+      // If an element receives focus and the browser scrolls to it, re-apply header scroll
+      try {
+        window.addEventListener('focusin', function() { setTimeout(scrollToHeaderInstant, 0); }, true);
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
   <!-- Mobile Navbar -->
   <div class="container mobile-navbar py-3 text-center" style="display: none;">
     <!-- Logo and Brand Name -->
@@ -175,12 +273,37 @@
 
   @media (max-width: 768px) {
     .mobile-navbar { display: block !important; }
-    /* hide the existing header-wrapper on small screens to avoid duplication */
-    .header-wrapper { display: none !important; }
+    /* Keep header-wrapper present but hide only desktop-specific elements inside it to avoid duplication
+       This allows #categoryMenu (which was moved inside .header-wrapper) to remain visible on mobile. */
+    .header-wrapper { display: block !important; }
+    /* Hide large-brand desktop logo and certain desktop-only nav elements when on mobile */
+    .header-wrapper .navbar-brand.d-flex.align-items-center { display: none !important; }
+    .header-wrapper .nav-icons { display: none !important; }
+    .header-wrapper form.d-flex { display: none !important; }
+
+    /* Ensure the moved category menu is visible below the mobile navbar */
+    #categoryMenu { display: block !important; }
     /* sync cart badge ids if needed */
     #cart-count-mobile { display: inline-block; }
   }
   </style>
+  <script>
+    // On mobile devices, ensure the page is scrolled to the top on load or when coming from bfcache
+    (function() {
+      function scrollToTopOnMobile() {
+        try {
+          if (window.innerWidth <= 768) {
+            // give the browser a tiny moment to restore scroll position if any, then jump to top
+            setTimeout(function() { window.scrollTo(0, 0); }, 20);
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      document.addEventListener('DOMContentLoaded', scrollToTopOnMobile);
+      // pageshow also catches back/forward cache restores
+      window.addEventListener('pageshow', function(e) { if (e.persisted) scrollToTopOnMobile(); });
+    })();
+  </script>
   <!-- Header -->
   <div class="header-wrapper">
     <nav class="navbar navbar-expand-lg py-0">
@@ -245,46 +368,45 @@
                   currentFilter: '{{ current_filter|default:"" }}'.trim()
                 };
               } catch (e) { /* ignore in templates if missing */ }
-            });
-          </script>
-      </div>
-    </nav>
+                    });
+              </script>
+              </div>
+            </nav>
 
-    </nav>
-  </div>
+            </nav>
+            <!-- Category Menu (moved inside header-wrapper so it moves with the header on mobile) -->
+            <div id="categoryMenu" class="bg-light py-2 border-top">
+              <div id="cartSection" class="container mt-4 d-none">
+                <!-- Cart content will load here -->
+              </div>
 
-  <!-- Category Menu (moved outside header-wrapper so it's visible under mobile navbar) -->
-  <div id="categoryMenu" class="bg-light py-2 border-top">
-    <div id="cartSection" class="container mt-4 d-none">
-      <!-- Cart content will load here -->
-    </div>
-
-    <div class="container">
-      <div class="d-flex justify-content-center flex-wrap gap-1">
-        <button id="load_home_contents" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-          Home
-        </button>
-        <button id="load_product_list" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-          Products
-        </button>          
-        <button id="load_my_cart" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
-          Cart
-        </button> 
-        <button id="load_accounts" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-          Accounts
-        </button> 
-        <button id="load_testimony" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-          Customer Reviews
-        </button> 
-        <button id="load_history" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
-          Orders
-        </button> 
-        <button id="load_about_us" class="nav-link px-2" style="background: none; border: none; color: inherit;">
-          About us
-        </button> 
-      </div>
-    </div>
-  </div>
+              <div class="container">
+                <div class="d-flex justify-content-center flex-wrap gap-1">
+                  <button id="load_home_contents" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+                    Home
+                  </button>
+                  <button id="load_product_list" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+                    Products
+                  </button>
+                  <button id="load_my_cart" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
+                    Cart
+                  </button>
+                  <button id="load_accounts" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+                    Accounts
+                  </button>
+                  <button id="load_testimony" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+                    Customer Reviews
+                  </button>
+                  <button id="load_history" class="nav-link px-2" style="background: none; border: none; color: inherit; display: none;">
+                    Orders
+                  </button>
+                  <button id="load_about_us" class="nav-link px-2" style="background: none; border: none; color: inherit;">
+                    About us
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
   <!-- Inline product viewer container (kept hidden until a product is clicked) -->
   <div id="productContainer" class="product-container" style="display: none;"></div>
@@ -424,6 +546,21 @@
               @media (min-width: 992px) {
                 .bundle-card img {
                   max-height: 200px;
+                }
+              }
+              /* Mobile: make product images taller and cover the area for better visibility */
+              @media (max-width: 768px) {
+                .product-image-wrapper img,
+                .product-card .product-image-wrapper img,
+                .product-card .product-image-wrapper .carousel-item img {
+                  max-height: 300px !important;
+                  height: 300px !important;
+                  width: 100% !important;
+                  object-fit: cover !important;
+                }
+                /* If you use inline placeholders inside wrappers, ensure the wrapper keeps height */
+                .product-image-wrapper {
+                  min-height: 300px;
                 }
               }
             </style>
