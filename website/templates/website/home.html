@@ -281,10 +281,73 @@
     .header-wrapper .nav-icons { display: none !important; }
     .header-wrapper form.d-flex { display: none !important; }
 
-    /* Ensure the moved category menu is visible below the mobile navbar */
-    #categoryMenu { display: block !important; }
+  /* Ensure the moved category menu is hidden by default on mobile; hamburger toggles it */
+  #categoryMenu { display: none; }
     /* sync cart badge ids if needed */
     #cart-count-mobile { display: inline-block; }
+  }
+  </style>
+  <style>
+  /* Mobile fixed right action column */
+  @media (max-width: 768px) {
+    /* hide the old mobile-navbar to avoid duplication */
+    .mobile-navbar { display: none !important; }
+
+    /* right fixed actions */
+    .mobile-fixed-actions {
+      position: fixed;
+      right: 12px;
+      top: 40%;
+      transform: translateY(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mobile-fixed-actions .action-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      box-shadow: 0 6px 14px rgba(16,24,40,0.12);
+      border: none;
+      color: #111827;
+    }
+
+  /* Make category menu collapsed by default on mobile */
+  #categoryMenu { display: none; }
+
+    /* make header hamburger visually consistent */
+    #hamburgerBtn {
+      background: transparent;
+      border: none;
+      padding: 6px 8px;
+      color: #0f172a;
+    }
+
+    /* force visible and above other elements on mobile */
+    #hamburgerBtn { display: inline-flex !important; align-items: center; justify-content: center; z-index: 10001; }
+
+    /* small touch target tweak for header area */
+    .header-wrapper .container { display: flex; align-items: center; gap: 8px; }
+  }
+
+  /* smoother reveal animation */
+  .category-menu-slide {
+    transition: transform 240ms ease, opacity 180ms ease;
+    transform-origin: top center;
+  }
+
+  /* Ensure the ID + class wins over the collapsed rule when open */
+  #categoryMenu.category-menu-open {
+    display: block !important;
+    transform: none !important;
+    opacity: 1 !important;
   }
   </style>
   <script>
@@ -303,6 +366,82 @@
       // pageshow also catches back/forward cache restores
       window.addEventListener('pageshow', function(e) { if (e.persisted) scrollToTopOnMobile(); });
     })();
+  </script>
+  <script>
+    // Toggle category menu when hamburger clicked (mobile)
+    (function initHamburgerToggle() {
+      function init() {
+        try {
+          console.debug && console.debug('initHamburgerToggle running');
+          var btn = document.getElementById('hamburgerBtn');
+          var cat = document.getElementById('categoryMenu');
+          var fixedActions = document.getElementById('mobileFixedActions');
+
+          // Show the fixed actions on mobile
+          if (fixedActions && window.innerWidth <= 768) {
+            fixedActions.style.display = 'flex';
+          }
+
+          if (!btn) { console.debug && console.debug('hamburgerBtn not found'); return; }
+          if (!cat) { console.debug && console.debug('categoryMenu not found'); return; }
+
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var isOpen = cat.classList.contains('category-menu-open');
+            if (!isOpen) {
+              cat.classList.add('category-menu-open', 'category-menu-slide');
+              cat.style.display = 'block';
+              btn.setAttribute('aria-expanded', 'true');
+              // scroll menu into view (below header)
+              setTimeout(function() { try { cat.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e){} }, 40);
+            } else {
+              cat.classList.remove('category-menu-open');
+              cat.style.display = 'none';
+              btn.setAttribute('aria-expanded', 'false');
+            }
+          });
+
+          // Close menu when clicking outside it on mobile (use contains for wide compatibility)
+          document.addEventListener('click', function(ev) {
+            if (window.innerWidth > 768) return;
+            if (!cat.classList.contains('category-menu-open')) return;
+            var target = ev.target || ev.srcElement;
+            if (!cat.contains(target) && !btn.contains(target)) {
+              cat.classList.remove('category-menu-open');
+              cat.style.display = 'none';
+              if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+          }, true);
+        } catch (e) { console.warn('mobile menu init failed', e); }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        // DOM already ready
+        init();
+      }
+    })();
+
+    // Utility: keep mobile fixed cart count in sync if other code updates badge ids
+    function syncCartBadges() {
+      try {
+        var main = document.getElementById('cart-count');
+        var mobile = document.getElementById('cart-count-mobile');
+        var mobileFixed = document.getElementById('cart-count-mobile-fixed');
+        var n = 0;
+        if (main && main.textContent) n = main.textContent.trim();
+        else if (mobile && mobile.textContent) n = mobile.textContent.trim();
+        if (mobileFixed) {
+          mobileFixed.textContent = n || '0';
+          mobileFixed.style.display = (parseInt(n) > 0) ? 'inline-block' : 'none';
+        }
+        if (mobile) mobile.style.display = (parseInt(n) > 0) ? 'inline-block' : 'none';
+      } catch(e) {}
+    }
+
+    // hook into existing renderCart or polling to keep counts updated
+    try { setInterval(syncCartBadges, 1000); } catch(e) {}
   </script>
   <!-- Header -->
   <div class="header-wrapper">
@@ -326,6 +465,17 @@
             LIONTECH
           </span>
         </a>
+
+            <!-- Mobile hamburger (shows only on small screens) -->
+            <button id="hamburgerBtn" class="btn btn-outline-secondary d-lg-none ms-2" aria-expanded="false" aria-controls="categoryMenu" title="Menu">
+              <span class="visually-hidden">Toggle menu</span>
+              <!-- simple hamburger icon -->
+              <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect y="1" width="22" height="2" rx="1" fill="currentColor" />
+                <rect y="7" width="22" height="2" rx="1" fill="currentColor" />
+                <rect y="13" width="22" height="2" rx="1" fill="currentColor" />
+              </svg>
+            </button>
 
         <!-- Search Bar -->
         <form class="d-flex flex-grow-1 mx-3" method="get" action=".">
@@ -410,6 +560,24 @@
 
   <!-- Inline product viewer container (kept hidden until a product is clicked) -->
   <div id="productContainer" class="product-container" style="display: none;"></div>
+
+          <!-- Mobile fixed right-side action buttons (Login, Cart, Orders) -->
+          <div class="mobile-fixed-actions" id="mobileFixedActions" aria-hidden="false">
+            <a href="{% url 'account_login' %}" class="action-btn" title="Log in">
+              <button class="action-btn" aria-label="Log in">
+                <i class="bi bi-box-arrow-in-right"></i>
+              </button>
+            </a>
+
+            <button id="cartIconMobileFixed" class="action-btn" title="Cart">
+              <i class="bi bi-bag"></i>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cart-count-mobile-fixed" style="font-size:10px; min-width:20px;">0</span>
+            </button>
+
+            <button id="ordersBtnMobileFixed" class="action-btn" title="Orders">
+              <i class="bi bi-card-list"></i>
+            </button>
+          </div>
 
   <!-- Product list page now-->
   <div id="promotion_page" style="display: none;"class="mt-3"> 
