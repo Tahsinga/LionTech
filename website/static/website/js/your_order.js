@@ -34,6 +34,13 @@ function showSection(sectionId) {
                 } else if (mobileHeader && window.getComputedStyle(mobileHeader).display !== 'none') {
                     headerHeight = mobileHeader.offsetHeight;
                 }
+                // If a compact mobile topbar exists (logo + search above hamburger), include its height
+                try {
+                    const mobileTopbar = document.querySelector('.mobile-topbar');
+                    if (mobileTopbar && window.getComputedStyle(mobileTopbar).display !== 'none') {
+                        headerHeight += mobileTopbar.offsetHeight;
+                    }
+                } catch (e) {}
             } catch (e) { /* ignore */ }
 
             // Account for category menu height if present and not hidden
@@ -134,6 +141,27 @@ try {
     // If DOM isn't ready or elements are missing, fail silently
 }
 
+// Also mirror desktop handlers for fixed mobile action buttons (right-side floating buttons)
+try {
+    const cartFixed = document.getElementById('cartIconMobileFixed');
+    if (cartFixed) {
+        cartFixed.addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('products_addto_cart');
+        });
+    }
+
+    const ordersFixed = document.getElementById('ordersBtnMobileFixed');
+    if (ordersFixed) {
+        ordersFixed.addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('HistoryContents');
+        });
+    }
+} catch (err) {
+    // non-fatal
+}
+
 // On page load, start at homeContent
 window.addEventListener('load', function() {
     // If the URL contains product detail path, keep products visible
@@ -161,6 +189,13 @@ function adjustCategoryMenu() {
         } else if (mobileHeader && window.getComputedStyle(mobileHeader).display !== 'none') {
             headerHeight = mobileHeader.offsetHeight;
         }
+        // include compact mobile topbar height when visible
+        try {
+            const mobileTopbar = document.querySelector('.mobile-topbar');
+            if (mobileTopbar && window.getComputedStyle(mobileTopbar).display !== 'none') {
+                headerHeight += mobileTopbar.offsetHeight;
+            }
+        } catch (e) {}
     } catch (e) { /* ignore */ }
 
     // Set sticky positioning and top so it stays visible beneath header
